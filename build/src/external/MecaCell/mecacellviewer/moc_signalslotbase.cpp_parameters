@@ -1,0 +1,14 @@
+-I/usr/include
+-I/usr/include
+-I/usr/include
+-I/usr/include/x86_64-linux-gnu
+-I/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build
+-I/usr/include
+-I/usr/include
+-I/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/src/external/MecaCell
+-DCGAL_USE_MPFR
+-DCGAL_USE_GMPXX
+-DCGAL_USE_GMP
+-o
+/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build/src/external/MecaCell/mecacellviewer/moc_signalslotbase.cpp
+/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/src/external/MecaCell/mecacellviewer/signalslotbase.h

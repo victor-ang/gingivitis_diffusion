@@ -1,0 +1,45 @@
+{
+
+  "Immune": {
+    "speed": 1.0,
+    "divisionProb": 0.001,
+    "deathProb": 0.000001,
+    "health": 1.0,
+    "killing": 0.01,
+    "inflaProd": 1,
+    "resoProd": 1,
+    "inflaDegrad": 0.05,
+    "resoDegrad": 0.05,
+    "inflaHealthImpact": 0.001,
+    "extinctionProb": 0.005
+  },
+
+  "Stroma": {
+      "speed": 0.01,
+      "divisionProb": 0.1,
+      "deathProb": 0.0001,
+      "health": 1.0,
+      "killing": 0.0001,
+      "inflaProd": 0.5,
+      "resoProd": 0.0,
+      "inflaDegrad": 0.05,
+      "resoDegrad": 0.05,
+      "inflaHealthImpact": 0.001
+    },
+
+    "ImmuneMaker": {
+      "speed": 0.0,
+      "divisionProb": 1.0,
+      "deathProb": 0.0,
+      "health": 100000.0,
+      "killing": 0.0,
+      "inflaProd": 1,
+      "resoProd": 1,
+      "inflaDegrad": 0.01,
+      "resoDegrad": 0.01,
+      "inflaHealthImpact": 0.0
+    },
+    "lowValue":2,
+    "highValue":6,
+    "nbCells":2850
+}
