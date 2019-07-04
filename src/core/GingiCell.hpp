@@ -157,8 +157,7 @@ public:
     }
     
     // Programmed death
-    if (dice(MecaCell::Config::globalRand()) <
-        deathProb) { // random number between 0 and 1
+    if (dice(MecaCell::Config::globalRand()) < deathProb) { // random number between 0 and 1
       apoptosis();
       return;
     }
@@ -246,15 +245,14 @@ public:
 
   template <class W> void immuneMakerBehavior(W &w) {
     // Number of ImmuneMaker cells : uniform distribution between 0 and 1
-    // You can change the minimum and maximum values in j.json file
-    // (lowValue and highValue)
+    // You can change the minimum and maximum values in j.json file (lowValue and highValue)
 
     // Constraining ImmuneMaker cells in the box
     constrainingCells();
 
     // Division proba
     if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE]) {
-	// The more inflammation there is, the more likely it is that the cell will divide
+	  // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
     }
 
@@ -276,15 +274,13 @@ public:
     c->type = Immune;
     c->init(Immune, config);
     c->immuneType = Circulatory; // Circulatory cells created by ImmuneMaker
-    c->speed = (float)((*config)["Immune"]["speed"]) * 2; // cast of json values. 
-														// Circulatory move fasgter : factor to
-                  										// be adjusted
+    c->speed = (float)((*config)["Immune"]["speed"]) * 2; // Circulatory move faster : factor to be adjusted
     c->divisionProb = 0;
     c->deathProb = 0;
     c->inflaHealthImpact = (float)((*config)["Immune"]["inflaHealthImpact"]);
-    c->inflaProd = (float)((*config)["Immune"]["inflaProd"]); // Circulatory immune cell much more
-                                          // inflammatory than the resident
-                                          // (favtor to be adjusted)
+    c->inflaProd = (float)((*config)["Immune"]["inflaProd"]) * 2; // Circulatory immune cell much more
+                                                                  // infla than the resident
+                                                                  // (factor to be adjusted)
     c->resoProd = c->inflaProd;
     c->resoDegrad = c->inflaDegrad;
     c->setColor(1.0, 0.5, 0.0);
@@ -323,7 +319,6 @@ public:
       this->setColor(health, 0.0, health);
       if (health <= 0.0) {
         this->die();
-        // std::cerr << "mort" << std::endl;
       }
     }
   }
@@ -350,7 +345,7 @@ public:
     }
     avgDist /= this->getConnectedCells().size();
     if (avgDist > 1.5 * this->getBoundingBoxRadius()) { // Average distance greater than 1.5
-                                           			 // times the radius of a cell
+                                           			        // times the radius of a cell
 
       if (dice(MecaCell::Config::globalRand()) < divisionProb) {
         GingiCell<B> *daughter = divide();
@@ -376,7 +371,7 @@ public:
         this->setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE]);
       else if (type == Stroma)
         this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.0);
-      c->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, -inflaProd * c->health); // ADD : la propagation depend du niveau de vie de la nécrotique
+      c->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, -inflaProd * c->health); // propagation depends on the life of the necrotic cell
       c->health -= killing;
     }
     return b;
@@ -391,8 +386,8 @@ public:
 
     // While the cell feels eat-me produced by necrotic cells,
     // its inflammation increases and its resolutive decreases.
-    // When it no longer feels eat-me from necrotic cells, its resolutive
-    // increases and its inflammation decreases.
+    // When it no longer feels eat-me from necrotic cells : switch (its resolutive
+    // increases and its inflammation decreases.)
 
     float closestNecroDist = 1000000; // infty
     GingiCell<B> *closestNecroCell = nullptr;
@@ -416,7 +411,7 @@ public:
         this->getBody().setConsumption(SIGNAL::RESOLUTIF, resoDegrad);
       }
       else {
-        if (type == Immune) {
+        if (type == Immune) { // the immune cells switch first
           this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, inflaDegrad);
           this->getBody().setConsumption(SIGNAL::RESOLUTIF, -resoProd);
         }
@@ -425,9 +420,6 @@ public:
       this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, inflaDegrad);
       this->getBody().setConsumption(SIGNAL::RESOLUTIF, -resoProd);
     }
-
-    // Les cellules emettent du PI si leur PI > PR ou du PR dans le cas
-    // contraire ADD DIFFUSION
 
     this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, inflaDegrad);
     this->getBody().setConsumption(SIGNAL::RESOLUTIF, resoDegrad);
@@ -442,8 +434,7 @@ public:
 
   void disappearanceCirculatory(double avgInfla) {
     if (avgInfla <= 0) {
-      if (this->immuneType == Circulatory &&
-          dice(MecaCell::Config::globalRand()) < extinctionProb) {
+      if (this->immuneType == Circulatory && dice(MecaCell::Config::globalRand()) < extinctionProb) {
         this->die();
       }
     }
@@ -467,7 +458,6 @@ public:
       this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.0);
       dir *= speed;
       this->body.moveTo(this->getPosition() - dir);
-      // std::cerr<<"test"<< std::endl;
       b = true;
     }
     return b;
@@ -493,7 +483,7 @@ public:
 
     if (closestApopCell) {
       if (closestApopDist <
-          this->getBoundingBoxRadius() * 4.0) { // 4 rayons cellulaires
+          this->getBoundingBoxRadius() * 4.0) { // 4 radius
         dir = this->getPosition() - closestApopCell->getPosition();
         dir /= (closestApopDist + 0.001);
         // this->setColor(0.0, 1.0, 0.0);
