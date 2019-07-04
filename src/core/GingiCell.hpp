@@ -6,7 +6,7 @@
 #include "GingiScenario.hpp"
 #include <mecacell/mecacell.h>
 
-enum SIGNAL { INFLAMMATOIRE = 0, RESOLUTIF = 1 };
+enum SIGNAL { INFLAMMATOIRE = 0, RESOLUTIF = 1, EATME = 2 };
 
 template <template <typename> class B>
 class GingiCell : public MecaCell::ConnectableCell<GingiCell<B>, B> {
@@ -394,6 +394,7 @@ public:
     for (GingiCell<B> *cell : w.cells) {
       if (!cell->isDead() && cell != this) {
         if (cell->state == Necrosis)  {
+          cell->getBody().setConsumption(SIGNAL::EATME, -1.0); // la cellule en nécrose émet du eat-me
           MecaCell::Vec dis = this->getPosition() - cell->getPosition();
           double len = dis.length();
           if (len < closestNecroDist) {
@@ -406,7 +407,7 @@ public:
     // std::cerr <<closestNecroDist <<std::endl;
 
     if (closestNecroCell) {
-      if (closestNecroDist < this->getBoundingBoxRadius() * 4.0) {
+      if (this->getBody().getQuantities()[SIGNAL::EATME] <= 0) {
         this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, -inflaProd);
         this->getBody().setConsumption(SIGNAL::RESOLUTIF, resoDegrad);
       }
@@ -470,6 +471,7 @@ public:
     for (GingiCell<B> *c : w.cells) {
       if (!c->isDead() && c != this) {
         if (c->state == Apoptosis || c->state == Necrosis) {
+          c->getBody().setConsumption(SIGNAL::EATME, -1.0); // la cellule en nécrose ou en apoptose émet du eat-me
           MecaCell::Vec d = this->getPosition() - c->getPosition();
           double l = d.length();
           if (l < closestApopDist) {
@@ -482,8 +484,8 @@ public:
     // std::cerr <<closestApopDist <<std::endl;
 
     if (closestApopCell) {
-      if (closestApopDist <
-          this->getBoundingBoxRadius() * 4.0) { // 4 radius
+      //if (closestApopDist < this->getBoundingBoxRadius() * 4.0) { // 4 radius
+      if (this->getBody().getQuantities()[SIGNAL::EATME] <= 0) {
         dir = this->getPosition() - closestApopCell->getPosition();
         dir /= (closestApopDist + 0.001);
         // this->setColor(0.0, 1.0, 0.0);

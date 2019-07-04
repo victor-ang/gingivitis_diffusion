@@ -27,9 +27,11 @@ public:
     js = loadJsonConfig("../j.json");
     Molecule infla(400.0, 0.0, 1.0, 0.1);
     Molecule resolutif(400.0, 0.0, 1.0, 0.1);
+    Molecule eatme(600.0, 0.0, 1.0, 0.1);
 
     w.cellPlugin.diffusionPlugin.addMolecule(infla);
     w.cellPlugin.diffusionPlugin.addMolecule(resolutif);
+    w.cellPlugin.diffusionPlugin.addMolecule(eatme);
 
     w.setDt(1);
     // Add cells
