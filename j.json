@@ -6,12 +6,31 @@
     "deathProb": 0.000001,
     "health": 1.0,
     "killing": 0.01,
-    "inflaProd": 1,
-    "resoProd": 1,
-    "inflaDegrad": 0.05,
-    "resoDegrad": 0.05,
+    "inflaProd": 0.5,
+    "resoProd": 0.5,
+    "inflaDegrad": 0.25,
+    "resoDegrad": 0.25,
     "inflaHealthImpact": 0.001,
-    "extinctionProb": 0.005
+    "red": 1.0,
+    "green": 0.5,
+    "blue": 0.5
+  },
+
+  "ImmuneCirculatory": {
+    "speed": 2.0,
+    "divisionProb": 0.0,
+    "deathProb": 0.0,
+    "health": 1.0,
+    "killing": 0.01,
+    "inflaProd": 1.0,
+    "resoProd": 0.5,
+    "inflaDegrad": 0.25,
+    "resoDegrad": 0.25,
+    "inflaHealthImpact": 0.001,
+    "extinctionProb": 0.005,
+    "red": 1.0,
+    "green": 1.0,
+    "blue": 0.0
   },
 
   "Stroma": {
@@ -20,11 +39,14 @@
       "deathProb": 0.0001,
       "health": 1.0,
       "killing": 0.0001,
-      "inflaProd": 0.5,
+      "inflaProd": 0.25,
       "resoProd": 0.0,
-      "inflaDegrad": 0.05,
+      "inflaDegrad": 0.25,
       "resoDegrad": 0.05,
-      "inflaHealthImpact": 0.001
+      "inflaHealthImpact": 0.001,
+      "red": 0.5,
+      "green": 0.5,
+      "blue": 1.0
     },
 
     "ImmuneMaker": {
@@ -33,13 +55,17 @@
       "deathProb": 0.0,
       "health": 100000.0,
       "killing": 0.0,
-      "inflaProd": 1,
-      "resoProd": 1,
-      "inflaDegrad": 0.01,
-      "resoDegrad": 0.01,
-      "inflaHealthImpact": 0.0
+      "inflaProd": 0.1,
+      "resoProd": 0.1,
+      "inflaDegrad": 0.1,
+      "resoDegrad": 0.1,
+      "inflaHealthImpact": 0.0,
+      "red": 1.0,
+      "green": 0.5,
+      "blue": 0.0
     },
-    "lowValue":2,
-    "highValue":6,
-    "nbCells":2850
+    "lowValue": 2,
+    "highValue": 6,
+    "nbCells": 2850,
+    "ratioImmuneStromal": 0.25
 }

@@ -26,11 +26,11 @@ public:
 
     js = loadJsonConfig("../j.json");
     Molecule infla(400.0, 0.0, 1.0, 0.1);
-    Molecule resolutif(400.0, 0.0, 1.0, 0.1);
+    Molecule reso(400.0, 0.0, 1.0, 0.1);
     Molecule eatme(600.0, 0.0, 1.0, 0.1);
 
     w.cellPlugin.diffusionPlugin.addMolecule(infla);
-    w.cellPlugin.diffusionPlugin.addMolecule(resolutif);
+    w.cellPlugin.diffusionPlugin.addMolecule(reso);
     w.cellPlugin.diffusionPlugin.addMolecule(eatme);
 
     w.setDt(1);
@@ -52,7 +52,7 @@ public:
 
     // Immune cells
     int nCells = js["nbCells"]; // Number of cells at the beginning
-    float ratio = 0.25;         // Ratio Immune/Stromale
+    float ratio = js["ratioImmuneStromal"]; // Ratio Immune/Stromale
     int k = 0;
     Cell *c;
     while (k < nCells * ratio) {
@@ -61,7 +61,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos);
-      c->init(Cell::Immune, &js); // ajout du json
+      c->init(Cell::Immune, &js);
       w.addCell(c);
     }
     while (k < nCells) {
@@ -75,8 +75,7 @@ public:
     }
 
     // Number of ImmuneMaker cells
-    std::random_device
-        rd; // Will be used to obtain a seed for the random number engine
+    std::random_device rd; // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> dis(js["lowValue"],
                                         js["highValue"]); // Uniform(a,b))
@@ -89,7 +88,6 @@ public:
       c->init(Cell::ImmuneMaker, &js);
       w.addCell(c);
     }
-    // c->init(Cell::ImmuneMaker, &js); // ajout du json
 
     w.addNewCells();
   }
@@ -97,17 +95,10 @@ public:
   void loop() {
     if (!stop()) {
 
-      if (w.getNbUpdates() ==
-          -1) { // 500) { // On ne rentre pas dans cette boucle
-        std::uniform_int_distribution<unsigned int> dist(0, w.cells.size());
-        for (int i = 0; i < 100; i++) {
-          w.cells[dist(MecaCell::Config::globalRand())]->state = Cell::Necrosis;
-        }
-      }
       if (w.getNbUpdates() % 1 == 0) {
 
-        // Création de fichiers (1 par step) qui contiennent les infos des
-        // cellules
+        // Création de fichiers (1 par step) qui contiennent les infos des cellules
+
         /* std::ofstream myfile;
         std::string fileName = "../CSV/csvStep"; // file name
         std::string extension = ".csv"; // extension
@@ -128,8 +119,9 @@ public:
         for (Cell *c : w.cells) {
 
           // Ecriture dans le fichier csv
+
           // myfile << c->type << "," << c->health << "," << c->infla << "," <<
-          // c->resolutif << "," << c->getPosition() << std::endl;
+          // c->reso << "," << c->getPosition() << std::endl;
 
           if (c->type == Cell::Immune) {
             if (c->state == Cell::Alive) {
@@ -153,7 +145,7 @@ public:
           } else if (c->type == Cell::ImmuneMaker) {
             nbImmuneMaker++;
           }
-          avgInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE];
+          avgInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
         }
         avgInfla /= w.cells.size();
 
@@ -170,11 +162,7 @@ public:
 
         // myfile.close(); // Fermeture du csv contenant toutes les cellules
       }
-      //	if (w.getNbUpdates() % 250 == 0) {
-      //		std::uniform_int_distribution<unsigned int> dist(0,
-      //w.cells.size()); 		w.cells[dist(MecaCell::Config::globalRand())]->state =
-      //Cell::Necrosis;
-      //	}
+
       w.update();
     }
   }
@@ -190,7 +178,7 @@ public:
     return (config);
   }
 
-  // Export values step by step (1row-> average of cells) to csv
+  // Function to export values step by step (1row-> average of cells) to csv
   void writeToCSV(int nbIter, int nbCells, int nbAliveStroma, int nbApopStroma,
                   int nbNecroStroma, int nbAliveImmune,
                   int nbAliveImmuneResident, int nbAliveImmuneCirculatory,
@@ -235,6 +223,6 @@ public:
   }
 };
 
-double GingiScenario::BOX_HALF_SIZE = 250;
+double GingiScenario::BOX_HALF_SIZE = 250.0;
 
 #endif // _GINGISCENARIO_H

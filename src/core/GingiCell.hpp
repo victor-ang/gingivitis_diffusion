@@ -6,19 +6,21 @@
 #include "GingiScenario.hpp"
 #include <mecacell/mecacell.h>
 
-enum SIGNAL { INFLAMMATOIRE = 0, RESOLUTIF = 1, EATME = 2 };
+enum SIGNAL { INFLAMMATORY = 0, RESOLUTIVE = 1, EATME = 2 };
 
 template <template <typename> class B>
 class GingiCell : public MecaCell::ConnectableCell<GingiCell<B>, B> {
   using Base = MecaCell::ConnectableCell<GingiCell<B>, B>;
 
 public:
+  // Different states a cell can have
   enum State {
     Alive,
     Apoptosis, // death without inflammation
-    Necrosis
+    Necrosis // death with inflammation
   };
 
+  // Cell types 
   enum Type {
     Immune,
     Stroma,
@@ -30,24 +32,24 @@ public:
   std::uniform_real_distribution<float> dice;
 
   nlohmann::json *config;
-  float speed;
-  float divisionProb;
-  float deathProb;
-  float health;
-  float killing;
-  //float infla = 0.0; // "Moyenne" inflammation
-  //float resolutif = 0.0; // "Moyenne" resolutif
+  float speed; // cell movement speed
+  float divisionProb; // probability of cell division
+  float deathProb; // probability of apoptosis
+  float health; // life of the cell
+  float killing; // ability to eliminate cells in necrosis or apoptosis
   State state;
-  float inflaProd;   // Ouverture du robinet
-  float resoProd;    // Fermeture du robinet
-  float inflaDegrad; // Ouverture du siphon
-  float resoDegrad;  // Fermeture du siphon
-  float inflaHealthImpact;
-  float extinctionProb; // Probability of disappearance of circulating substances after resolution of the inflammation
+  float inflaProd;   // pro-inflammatory production
+  float resoProd;    // pro-resolutive production
+  float inflaDegrad; // decrease in pro-inflammatory
+  float resoDegrad;  // decrease in pro-resolutive
+  float inflaHealthImpact; // impact of inflammation on healt
+  float extinctionProb; // probability of disappearance of circulating cells after resolution of the inflammation
   Type type;
   ImmuneType immuneType;
-  int age;
+  int age; // cell age
 
+
+  // ASK
   GingiCell(const MecaCell::Vec &v)
       : Base(), dice(0.0f, 1.0f) // Uniform (0,1)
   {
@@ -93,10 +95,11 @@ public:
       this->inflaDegrad = (*config)["Immune"]["inflaDegrad"];
       this->resoDegrad = (*config)["Immune"]["resoDegrad"];
       this->inflaHealthImpact = (*config)["Immune"]["inflaHealthImpact"];
-      this->setColor(1.0, 0.5, 0.5);
+      this->setColor((float)((*config)["Immune"]["red"]),
+                (float)((*config)["Immune"]["green"]),
+                (float)((*config)["Immune"]["blue"]));
       this->type = Immune;
       this->immuneType = Resident;
-      this->extinctionProb = (*config)["Immune"]["extinctionProb"];
     } else if (type == Stroma) {
       this->age = 0;
       this->speed = (*config)["Stroma"]["speed"];
@@ -110,7 +113,9 @@ public:
       this->inflaDegrad = (*config)["Stroma"]["inflaDegrad"];
       this->resoDegrad = (*config)["Stroma"]["resoDegrad"];
       this->inflaHealthImpact = (*config)["Stroma"]["inflaHealthImpact"];
-      this->setColor(0.5, 0.5, 1.0);
+      this->setColor((float)((*config)["Stroma"]["red"]),
+                (float)((*config)["Stroma"]["green"]),
+                (float)((*config)["Stroma"]["blue"]));
       this->type = Stroma;
       this->immuneType = None;
     } else if (type == ImmuneMaker) {
@@ -126,7 +131,9 @@ public:
       this->inflaDegrad = (*config)["ImmuneMaker"]["inflaDegrad"];
       this->resoDegrad = (*config)["ImmuneMaker"]["resoDegrad"];
       this->inflaHealthImpact = (*config)["ImmuneMaker"]["inflaHealthImpact"];
-      this->setColor(1.0, 0.5, 0.0);
+      this->setColor((float)((*config)["ImmuneMaker"]["red"]),
+                (float)((*config)["ImmuneMaker"]["green"]),
+                (float)((*config)["ImmuneMaker"]["blue"]));
       this->type = ImmuneMaker;
       this->immuneType = None;
     }
@@ -134,6 +141,7 @@ public:
 
   inline double getAdhesion() { return 1.; }
 
+  // adhesion coefficient with other cells 
   inline double getAdhesionWith(const GingiCell *, MecaCell::Vec) {
     return 1.25;
   }
@@ -141,14 +149,15 @@ public:
   template <class W> void updateBehavior(W &w) {
     this->age++;
 
+    // Constraining cells in the box
+    constrainingCells();
+
     // Immune maker behavior
     if (this->type == ImmuneMaker) {
       immuneMakerBehavior(w);
       return;
     }
 
-    // Constraining cells in the box
-    constrainingCells();
 
     // Death
     if (state == Apoptosis || state == Necrosis) {
@@ -162,17 +171,12 @@ public:
       return;
     }
 
-    // Impact of inflamation on healt
-    //std::cerr << this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] << std::endl;
-    this->health -= this->inflaHealthImpact * this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE];
+    // Impact of inflammation on health
+    //std::cerr << this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] << std::endl;
+    this->health -= this->inflaHealthImpact * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
     //std::cerr <<this->health << std::endl;
     if (this->health <= 0) {
       necrosis();
-      return;
-    }
-
-    // Division
-    if (division(w) == true) {
       return;
     }
 
@@ -204,6 +208,11 @@ public:
 
     // Random motion
     randomMotion(dir);
+
+    // Division
+    if (division(w) == true) {
+      return;
+    }
   }
 
   GingiCell<B> *divide() {
@@ -215,19 +224,19 @@ public:
     MecaCell::Vec daughterPostion(this->getPosition() + randomVec * MecaCell::Config::DEFAULT_CELL_RADIUS * 0.75);
     GingiCell<B> *daughter = new GingiCell<B>(daughterPostion);
 
-    this->age = 0;
+    this->age = 0; // age of the new cell (daughter) after division
     daughter->init(this);
 
     return daughter;
   }
 
-  inline MecaCell::Vec getRealPosition() {
+/*   inline MecaCell::Vec getRealPosition() {
     return this->getPosition() / 4. * 0.82;
   }
 
   inline double getRealBoundingBoxRadius() {
     return this->getBoundingBoxRadius() / 4. * 0.82;
-  }
+  } */
 
   void setColor(double r, double g, double b) {
     this->color[0] = r;
@@ -244,19 +253,17 @@ public:
   // FUNCTIONS USED IN updateBehavior
 
   template <class W> void immuneMakerBehavior(W &w) {
-    // Number of ImmuneMaker cells : uniform distribution between 0 and 1
+    // Number of ImmuneMaker cells : uniform distribution between 0 and 1 // PLUTOT UNE NORMALE
     // You can change the minimum and maximum values in j.json file (lowValue and highValue)
 
-    // Constraining ImmuneMaker cells in the box
-    constrainingCells();
 
     // Division proba
-    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE]) {
+    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]*10) {
 	  // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
     }
 
-    setColor(1.0, 0.5 + 0.5 * this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE], this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE]);
+    setColor(1.0, 0.5 + 0.5 * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
   }
 
   template <class W> void immuneCirculatoryCreation(W &w) {
@@ -264,9 +271,8 @@ public:
     // Creation of Circulatory Immune cells :
     //	- Do not divide
     // 	- Do not die of apoptosis
-    //	- Move faster than Resident cells (speed*2 to be adjusted)
-    //	- Produce more inflammation than Residents cells (inflaProd*2 to be
-    //	  adjusted)
+    //	- Move faster than Resident cells
+    //	- Produce more inflammation than Residents cells
     //	- Pro-resolutive after the switch
     //	- Disappear when there is no more inflammation
 
@@ -274,16 +280,18 @@ public:
     c->type = Immune;
     c->init(Immune, config);
     c->immuneType = Circulatory; // Circulatory cells created by ImmuneMaker
-    c->speed = (float)((*config)["Immune"]["speed"]) * 2; // Circulatory move faster : factor to be adjusted
-    c->divisionProb = 0;
-    c->deathProb = 0;
-    c->inflaHealthImpact = (float)((*config)["Immune"]["inflaHealthImpact"]);
-    c->inflaProd = (float)((*config)["Immune"]["inflaProd"]) * 2; // Circulatory immune cell much more
-                                                                  // infla than the resident
-                                                                  // (factor to be adjusted)
-    c->resoProd = c->inflaProd;
-    c->resoDegrad = c->inflaDegrad;
-    c->setColor(1.0, 0.5, 0.0);
+    c->speed = (float)((*config)["ImmuneCirculatory"]["speed"]); // Circulatory move faster
+    c->divisionProb = (float)((*config)["ImmuneCirculatory"]["divisionProb"]);
+    c->deathProb = (float)((*config)["ImmuneCirculatory"]["deathProb"]);
+    c->inflaHealthImpact = (float)((*config)["ImmuneCirculatory"]["inflaHealthImpact"]);
+    c->inflaProd = (float)((*config)["ImmuneCirculatory"]["inflaProd"]); // Circulatory immune cell much more infla than the resident
+    c->resoProd = (float)((*config)["ImmuneCirculatory"]["resoProd"]);
+    c->resoDegrad = (float)((*config)["ImmuneCirculatory"]["resoDegrad"]);
+    c->inflaDegrad = (float)((*config)["ImmuneCirculatory"]["inflaDegrad"]);
+    c->extinctionProb = (*config)["ImmuneCirculatory"]["extinctionProb"];
+    c->setColor((float)((*config)["ImmuneCirculatory"]["red"]),
+                (float)((*config)["ImmuneCirculatory"]["green"]),
+                (float)((*config)["ImmuneCirculatory"]["blue"]));
     w.addCell(c);
   }
 
@@ -368,10 +376,10 @@ public:
 
     } else if (c->state == Necrosis) {
       if (type == Immune)
-        this->setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE]);
+        this->setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
       else if (type == Stroma)
-        this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.0);
-      c->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, -inflaProd * c->health); // propagation depends on the life of the necrotic cell
+        this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
+      c->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * c->health); // propagation depends on the life of the necrotic cell
       c->health -= killing;
     }
     return b;
@@ -380,8 +388,8 @@ public:
   template <class W> void updateSignal(double *avgInfla, W &w) {
 
      for (auto *c : this->getConnectedCells()) {
-      *avgInfla = max(*avgInfla + c->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] / this->getConnectedCells().size() -
-                          c->getBody().getQuantities()[SIGNAL::RESOLUTIF] / this->getConnectedCells().size(),(double)0);
+      *avgInfla = max(*avgInfla + c->getBody().getQuantities()[SIGNAL::INFLAMMATORY] / this->getConnectedCells().size() -
+                          c->getBody().getQuantities()[SIGNAL::RESOLUTIVE] / this->getConnectedCells().size(),(double)0);
      }
 
     // While the cell feels eat-me produced by necrotic cells,
@@ -389,12 +397,12 @@ public:
     // When it no longer feels eat-me from necrotic cells : switch (its resolutive
     // increases and its inflammation decreases.)
 
-    float closestNecroDist = 1000000; // infty
+    float closestNecroDist = 1000000; // infinity
     GingiCell<B> *closestNecroCell = nullptr;
     for (GingiCell<B> *cell : w.cells) {
       if (!cell->isDead() && cell != this) {
         if (cell->state == Necrosis)  {
-          cell->getBody().setConsumption(SIGNAL::EATME, -1.0); // la cellule en nécrose émet du eat-me
+          cell->getBody().setConsumption(SIGNAL::EATME, -1.0 * cell->health); // la cellule en nécrose émet du eat-me propotiinnellement a sa vie
           MecaCell::Vec dis = this->getPosition() - cell->getPosition();
           double len = dis.length();
           if (len < closestNecroDist) {
@@ -407,25 +415,25 @@ public:
     // std::cerr <<closestNecroDist <<std::endl;
 
     if (closestNecroCell) {
-      if (this->getBody().getQuantities()[SIGNAL::EATME] <= 0) {
-        this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, -inflaProd);
-        this->getBody().setConsumption(SIGNAL::RESOLUTIF, resoDegrad);
+      if (this->getBody().getQuantities()[SIGNAL::EATME] >= 0) {
+        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd);
+        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, resoDegrad);
       }
       else {
         if (type == Immune) { // the immune cells switch first
-          this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, inflaDegrad);
-          this->getBody().setConsumption(SIGNAL::RESOLUTIF, -resoProd);
+          this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad);
+          this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd);
         }
       }
     } else if (!closestNecroCell && *avgInfla > 0.0) {
-      this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, inflaDegrad);
-      this->getBody().setConsumption(SIGNAL::RESOLUTIF, -resoProd);
+      this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad);
+      this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd);
     }
 
-    this->getBody().setConsumption(SIGNAL::INFLAMMATOIRE, inflaDegrad);
-    this->getBody().setConsumption(SIGNAL::RESOLUTIF, resoDegrad);
-    if (this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] > 0.0f)
-      this->setColor(0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5f, 0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5f, 0.0);
+    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad);
+    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, resoDegrad);
+    if (this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] > 0.0f)
+      this->setColor(0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.0);
     else if (type == Immune)
       this->setColor(1.0, 0.5, 0.5);
     else if (type == Stroma)
@@ -447,8 +455,8 @@ public:
     GingiCell<B> *maxInflaCell = nullptr;
     for (auto *c : this->getConnectedCells()) {
       if (!c->isDead()) {
-        if (c->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] > maxInfla) {
-          maxInfla = c->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE];
+        if (c->getBody().getQuantities()[SIGNAL::INFLAMMATORY] > maxInfla) {
+          maxInfla = c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
           maxInflaCell = c;
         }
       }
@@ -456,7 +464,7 @@ public:
     if (maxInflaCell && maxInfla > 0.5) {
       dir = this->getPosition() - maxInflaCell->getPosition();
       dir /= (dir.length() + 0.001);
-      this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATOIRE] * 0.5, 0.0);
+      this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
       dir *= speed;
       this->body.moveTo(this->getPosition() - dir);
       b = true;
@@ -471,7 +479,7 @@ public:
     for (GingiCell<B> *c : w.cells) {
       if (!c->isDead() && c != this) {
         if (c->state == Apoptosis || c->state == Necrosis) {
-          c->getBody().setConsumption(SIGNAL::EATME, -1.0); // la cellule en nécrose ou en apoptose émet du eat-me
+          c->getBody().setConsumption(SIGNAL::EATME, -1.0 * c->health); // la cellule en nécrose ou en apoptose émet du eat-me
           MecaCell::Vec d = this->getPosition() - c->getPosition();
           double l = d.length();
           if (l < closestApopDist) {
@@ -484,7 +492,6 @@ public:
     // std::cerr <<closestApopDist <<std::endl;
 
     if (closestApopCell) {
-      //if (closestApopDist < this->getBoundingBoxRadius() * 4.0) { // 4 radius
       if (this->getBody().getQuantities()[SIGNAL::EATME] <= 0) {
         dir = this->getPosition() - closestApopCell->getPosition();
         dir /= (closestApopDist + 0.001);
@@ -496,6 +503,7 @@ public:
     }
     return b;
   }
+
 
   void randomMotion(MecaCell::Vec dir) {
     dir = MecaCell::Vec::randomUnit();
