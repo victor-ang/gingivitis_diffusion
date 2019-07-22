@@ -11,13 +11,11 @@ template <class cell_t>
 class Bodies3D : public BodyDelaunayMassSpringDamper, public BodyDiffusion {
 
 private:
-  cell_t *c;
 
 public:
-  Bodies3D(cell_t *c, MecaCell::Vector3D pos = MecaCell::Vector3D::zero())
-      : BodyDelaunayMassSpringDamper(pos), BodyDiffusion(2) {}
+  Bodies3D(cell_t *, MecaCell::Vector3D pos = MecaCell::Vector3D::zero())
+      : BodyDelaunayMassSpringDamper(pos), BodyDiffusion(3,nullptr) {}
 
-  void init(cell_t *_m) {}
 
   double getBaseRadius() const { return MecaCell::Config::DEFAULT_CELL_RADIUS; }
 

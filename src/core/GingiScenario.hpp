@@ -60,7 +60,7 @@ public:
       MecaCell::Vec pos(nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
-      c = new Cell(pos);
+      c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
       c->init(Cell::Immune, &js);
       w.addCell(c);
     }
@@ -69,22 +69,29 @@ public:
       MecaCell::Vec pos(nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
-      c = new Cell(pos);
+      c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
       c->init(Cell::Stroma, &js); // ajout du json
       w.addCell(c);
     }
 
     // Number of ImmuneMaker cells
-    std::random_device rd; // Will be used to obtain a seed for the random number engine
+
+    /* std::random_device rd; // Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
     std::uniform_int_distribution<> dis(js["lowValue"],
                                         js["highValue"]); // Uniform(a,b))
-    int nbImmuneMaker = dis(gen);                         //  nbImmuneMaker
+    int nbImmuneMaker = dis(gen);                         //  nbImmuneMaker */
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<> d(4,1);
+    int nbImmuneMaker = d(gen);
+
     for (int k = 0; k < nbImmuneMaker; k++) {
       MecaCell::Vec pos(nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
-      c = new Cell(pos);
+      c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
       c->init(Cell::ImmuneMaker, &js);
       w.addCell(c);
     }

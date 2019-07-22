@@ -16,8 +16,7 @@ template <typename cell_t> struct Plugins3D {
 
   template <typename world_t> void onRegister(world_t *w) {
     w->registerPlugin(physicsPlugin);
-    w->registerPlugin(
-        diffusionPlugin); // commenter cette ligne pour debrancher la diffusion
+    w->registerPlugin(diffusionPlugin); // commenter cette ligne pour debrancher la diffusion
   }
 
   template <typename world_t> void preBehaviorUpdate(world_t *w) {}
