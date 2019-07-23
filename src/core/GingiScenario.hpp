@@ -74,17 +74,11 @@ public:
       w.addCell(c);
     }
 
-    // Number of ImmuneMaker cells
-
-    /* std::random_device rd; // Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<> dis(js["lowValue"],
-                                        js["highValue"]); // Uniform(a,b))
-    int nbImmuneMaker = dis(gen);                         //  nbImmuneMaker */
+    // Number of ImmuneMaker cells : normal distribution
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::normal_distribution<> d(4,1);
+    std::normal_distribution<> d(js["mean"],js["variance"]);
     int nbImmuneMaker = d(gen);
 
     for (int k = 0; k < nbImmuneMaker; k++) {

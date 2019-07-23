@@ -65,8 +65,8 @@
     "blue": 0.0
   },
 
-  "lowValue": 2,
-  "highValue": 6,
+  "mean": 4,
+  "variance": 1,
   "nbCells": 2850,
   "ratioImmuneStromal": 0.25
 }
