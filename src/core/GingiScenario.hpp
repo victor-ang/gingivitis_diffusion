@@ -61,7 +61,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::Immune, &js);
+      c->init(Cell::Immune, Cell::Resident, &js);
       w.addCell(c);
     }
     while (k < nCells) {
@@ -70,7 +70,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::Stroma, &js); // ajout du json
+      c->init(Cell::Stroma, Cell::None, &js); // ajout du json
       w.addCell(c);
     }
 
@@ -86,7 +86,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::ImmuneMaker, &js);
+      c->init(Cell::ImmuneMaker, Cell::None, &js);
       w.addCell(c);
     }
 

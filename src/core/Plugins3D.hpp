@@ -11,7 +11,7 @@ using namespace Diffusion;
 template <typename cell_t> struct Plugins3D {
 
   PluginDelaunayMassSpringDamper<cell_t> physicsPlugin;
-  PluginDiffusion diffusionPlugin = PluginDiffusion(20., 0.1);
+  PluginDiffusion diffusionPlugin = PluginDiffusion(20., 0.01);
   Plugins3D() {}
 
   template <typename world_t> void onRegister(world_t *w) {

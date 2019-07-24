@@ -87,91 +87,70 @@ public:
     this->setVisible(mother->getVisible());
   }
 
-  void init(Type type, nlohmann::json *js) { // Json added
-    config = js;
-    
-
-      // this->age = 0;
-      // this->eatenCounter = 0.0;
-      // this->shiftStep = 0;
-      // this->speed = (*config)["type"]["speed"];
-      // this->divisionProb = (*config)["type"]["divisionProb"];
-      // this->deathProb = (*config)["type"]["deathProb"];
-      // this->health = (*config)["type"]["health"];
-      // this->killing = (*config)["type"]["killing"];
-      // this->state = Alive;
-      // this->inflaProd = (*config)["type"]["inflaProd"];
-      // this->resoProd = (*config)["type"]["resoProd"];
-      // this->inflaDegrad = (*config)["type"]["inflaDegrad"];
-      // this->resoDegrad = (*config)["type"]["resoDegrad"];
-      // this->inflaHealthImpact = (*config)["type"]["inflaHealthImpact"];
-      // this->setColor((float)((*config)["type"]["red"]),
-      //           (float)((*config)["type"]["green"]),
-      //           (float)((*config)["type"]["blue"]));
-      // this->type = (Type)(*config)["type"]["type"];
-      // this->immuneType = (ImmuneType)(*config)["type"]["immuneType"];
-
+  char *typeToString(Type type) {
     if (type == Immune) {
-      this->age = 0;
-      this->eatenCounter = 0.0;
-      this->shiftStep = 0;
-      this->speed = (*config)["Immune"]["speed"];
-      this->divisionProb = (*config)["Immune"]["divisionProb"];
-      this->deathProb = (*config)["Immune"]["deathProb"];
-      this->health = (*config)["Immune"]["health"];
-      this->killing = (*config)["Immune"]["killing"];
-      this->state = Alive;
-      this->inflaProd = (*config)["Immune"]["inflaProd"];
-      this->resoProd = (*config)["Immune"]["resoProd"];
-      this->inflaDegrad = (*config)["Immune"]["inflaDegrad"];
-      this->resoDegrad = (*config)["Immune"]["resoDegrad"];
-      this->inflaHealthImpact = (*config)["Immune"]["inflaHealthImpact"];
-      this->setColor((float)((*config)["Immune"]["red"]),
-                (float)((*config)["Immune"]["green"]),
-                (float)((*config)["Immune"]["blue"]));
-      this->type = Immune;
-      this->immuneType = Resident;
-    } else if (type == Stroma) {
-      this->age = 0;
-      this->eatenCounter = 0.0;
-      this->shiftStep = 0;
-      this->speed = (*config)["Stroma"]["speed"];
-      this->divisionProb = (*config)["Stroma"]["divisionProb"];
-      this->deathProb = (*config)["Stroma"]["deathProb"];
-      this->health = (*config)["Stroma"]["health"];
-      this->killing = (*config)["Stroma"]["killing"];
-      this->state = Alive;
-      this->inflaProd = (*config)["Stroma"]["inflaProd"];
-      this->resoProd = (*config)["Stroma"]["resoProd"];
-      this->inflaDegrad = (*config)["Stroma"]["inflaDegrad"];
-      this->resoDegrad = (*config)["Stroma"]["resoDegrad"];
-      this->inflaHealthImpact = (*config)["Stroma"]["inflaHealthImpact"];
-      this->setColor((float)((*config)["Stroma"]["red"]),
-                (float)((*config)["Stroma"]["green"]),
-                (float)((*config)["Stroma"]["blue"]));
-      this->type = Stroma;
-      this->immuneType = None;
-    } else if (type == ImmuneMaker) {
-      this->age = 0;
-      this->eatenCounter = 0.0;
-      this->speed = (*config)["ImmuneMaker"]["speed"];
-      this->divisionProb = (*config)["ImmuneMaker"]["divisionProb"];
-      this->deathProb = (*config)["ImmuneMaker"]["deathProb"];
-      this->health = (*config)["ImmuneMaker"]["health"];
-      this->killing = (*config)["ImmuneMaker"]["killing"];
-      this->state = Alive;
-      this->inflaProd = (*config)["ImmuneMaker"]["inflaProd"];
-      this->resoProd = (*config)["ImmuneMaker"]["resoProd"];
-      this->inflaDegrad = (*config)["ImmuneMaker"]["inflaDegrad"];
-      this->resoDegrad = (*config)["ImmuneMaker"]["resoDegrad"];
-      this->inflaHealthImpact = (*config)["ImmuneMaker"]["inflaHealthImpact"];
-      this->setColor((float)((*config)["ImmuneMaker"]["red"]),
-                (float)((*config)["ImmuneMaker"]["green"]),
-                (float)((*config)["ImmuneMaker"]["blue"]));
-      this->type = ImmuneMaker;
-      this->immuneType = None;
+      return "Immune";
     }
-  } 
+    else if (type == Stroma) {
+      return "Stroma";
+    }
+    else if (type == ImmuneMaker) {
+      return "ImmuneMaker";
+    }
+  }
+
+  char *immuneTypeToString(ImmuneType immuneType) {
+    if (immuneType == None) {
+      return "None";
+    }
+    else if (immuneType == Resident) {
+      return "Resident";
+    }
+    else if (immuneType == Circulatory) {
+      return "Circulatory";
+    }
+  }
+
+
+  void assignParameters(Type type, ImmuneType immuneType, nlohmann::json *config) {
+    this->age = 0;
+    this->eatenCounter = 0.0;
+    this->shiftStep = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["shiftStep"];
+    this->speed = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["speed"];
+    this->divisionProb = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["divisionProb"];
+    this->deathProb = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["deathProb"];
+    this->health = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["health"];
+    this->killing = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["killing"];
+    this->state = Alive;
+    this->inflaProd = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["inflaProd"];
+    this->resoProd = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["resoProd"];
+    this->inflaDegrad = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["inflaDegrad"];
+    this->resoDegrad = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["resoDegrad"];
+    this->inflaHealthImpact = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["inflaHealthImpact"];
+    this->extinctionProb = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["extinctionProb"];
+    this->setColor(((*config)[typeToString(type)][immuneTypeToString(immuneType)]["red"]),
+              ((*config)[typeToString(type)][immuneTypeToString(immuneType)]["green"]),
+              ((*config)[typeToString(type)][immuneTypeToString(immuneType)]["blue"]));
+    this->immuneType = immuneType;
+    this->type = type;
+  }
+
+
+  void init(Type type, ImmuneType immuneType, nlohmann::json *js) {
+    if (type == Immune) {
+      if (immuneType == Resident) {
+        assignParameters(Immune, Resident, js);
+      }
+      else if (immuneType == Circulatory) {
+        assignParameters(Immune, Circulatory, js);
+      }
+    } else if (type == Stroma) {
+      assignParameters(Stroma, None, js);
+    } else if (type == ImmuneMaker) {
+      assignParameters(ImmuneMaker, None, js);
+    }
+  }
+
 
   inline double getAdhesion() { return 1.; }
 
@@ -188,7 +167,7 @@ public:
     this->age++;
 
     // Constraining cells in the box
-    constrainingCells();    
+    constrainingCells(); 
 
 
     // Immune maker behavior
@@ -285,9 +264,9 @@ public:
 
     // Division proba
 
-    //std::cerr<<divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] << std::endl;
+    //std::cerr<<this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] << std::endl;
 
-    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]*10) {
+    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]*10.0) {
 	  // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
     }
@@ -307,23 +286,7 @@ public:
     //	- Disappear when there is no more inflammation
 
     GingiCell<B> *c = divide();
-    c->type = Immune;
-    c->init(Immune, config);
-    c->eatenCounter = 0.0;
-    c->shiftStep = -5;
-    c->immuneType = Circulatory; // Circulatory cells created by ImmuneMaker cells
-    c->speed = (float)((*config)["ImmuneCirculatory"]["speed"]); // Circulatory move faster
-    c->divisionProb = (float)((*config)["ImmuneCirculatory"]["divisionProb"]);
-    c->deathProb = (float)((*config)["ImmuneCirculatory"]["deathProb"]);
-    c->inflaHealthImpact = (float)((*config)["ImmuneCirculatory"]["inflaHealthImpact"]);
-    c->inflaProd = (float)((*config)["ImmuneCirculatory"]["inflaProd"]); // Circulatory immune cell much more infla than the resident one
-    c->resoProd = (float)((*config)["ImmuneCirculatory"]["resoProd"]);
-    c->resoDegrad = (float)((*config)["ImmuneCirculatory"]["resoDegrad"]);
-    c->inflaDegrad = (float)((*config)["ImmuneCirculatory"]["inflaDegrad"]);
-    c->extinctionProb = (*config)["ImmuneCirculatory"]["extinctionProb"];
-    c->setColor((float)((*config)["ImmuneCirculatory"]["red"]),
-                (float)((*config)["ImmuneCirculatory"]["green"]),
-                (float)((*config)["ImmuneCirculatory"]["blue"]));
+    c->init(Immune, Circulatory, config);
     w.addCell(c);
   }
 
@@ -590,31 +553,6 @@ public:
         }
       }
     }
-
-
-  void initCells(Type type, nlohmann::json *js) {
-    config = js;
-    
-    this->age = 0;
-    this->eatenCounter = 0.0;
-    this->shiftStep = 0;
-    this->speed = (*config)["Immune"]["speed"];
-    this->divisionProb = (*config)["Immune"]["divisionProb"];
-    this->deathProb = (*config)["Immune"]["deathProb"];
-    this->health = (*config)["Immune"]["health"];
-    this->killing = (*config)["Immune"]["killing"];
-    this->state = Alive;
-    this->inflaProd = (*config)["Immune"]["inflaProd"];
-    this->resoProd = (*config)["Immune"]["resoProd"];
-    this->inflaDegrad = (*config)["Immune"]["inflaDegrad"];
-    this->resoDegrad = (*config)["Immune"]["resoDegrad"];
-    this->inflaHealthImpact = (*config)["Immune"]["inflaHealthImpact"];
-    this->setColor((float)((*config)["Immune"]["red"]),
-              (float)((*config)["Immune"]["green"]),
-              (float)((*config)["Immune"]["blue"]));
-    this->type = Immune;
-    this->immuneType = Resident;
-  }
 
 
 };
