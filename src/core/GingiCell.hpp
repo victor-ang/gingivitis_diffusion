@@ -180,11 +180,16 @@ public:
     return 1.25;
   }
 
+
+
+
+
   template <class W> void updateBehavior(W &w) {
     this->age++;
 
     // Constraining cells in the box
-    constrainingCells();
+    constrainingCells();    
+
 
     // Immune maker behavior
     if (this->type == ImmuneMaker) {
@@ -260,14 +265,6 @@ public:
     return daughter;
   }
 
-/*   inline MecaCell::Vec getRealPosition() {
-    return this->getPosition() / 4. * 0.82;
-  }
-
-  inline double getRealBoundingBoxRadius() {
-    return this->getBoundingBoxRadius() / 4. * 0.82;
-  } */
-
   void setColor(double r, double g, double b) {
     this->color[0] = r;
     this->color[1] = g;
@@ -284,13 +281,17 @@ public:
 
   template <class W> void immuneMakerBehavior(W &w) {
     // Number of ImmuneMaker cells : normal distribution 
-    // You can change the mean and the variance values in j.json file
+    // Mean and the variance values in j.json file
 
     // Division proba
+
+    //std::cerr<<divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] << std::endl;
+
     if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]*10) {
 	  // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
     }
+    
 
     setColor(1.0, 0.5 + 0.5 * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
   }
@@ -445,12 +446,14 @@ public:
         this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd);
       }
 
+
+
     // Si une cellule a mangé et ne ressent plus de eat-me 
     if (this->eatenCounter > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
       //if (this->shiftStep <= 10){
       if (this->shiftStep <= 20){
-        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1-1/(1 + 0.1 * exp(-shiftStep+5)))); // * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]); //Production diminue
-        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1/(1+10 * exp(-shiftStep + 5)))); // * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]); // Production augmente
+        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1-1/(1 + 0.1 * exp(-shiftStep+5))) * inflaProd); //Production diminue
+        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1/(1+10 * exp(-shiftStep + 5))) * resoProd);// Production augmente
         this->shiftStep++;
       }
       else { // if 20 steps (end of the shift), counters reset to 0
@@ -462,7 +465,6 @@ public:
           this->shiftStep = 0;
         }        
       }
-
     }
 
     this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad); // Evaporation
@@ -542,7 +544,6 @@ public:
       }
     }
     
-
     double unif = dice(MecaCell::Config::globalRand()); //Uniforme (0,1)
 
     // Cumulative sum on the signals table
@@ -550,7 +551,6 @@ public:
       probas[i+1] += probas[i];
     }
     
-  
     // We look at the interval in which the uniform pulled is,
     // and we move according to the corresponding vector in the second table
     for (int i = 0 ; i < neighbouringVoxelsNumber - 1 ; i++) {
@@ -559,8 +559,6 @@ public:
       }
     }
     
-    
-
     if (dir != MecaCell::Vec(0, 0, 0)) {
       //this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
       this->body.moveTo(this->getPosition() - dir);
@@ -589,7 +587,6 @@ public:
         if (c->state == Apoptosis || c->state == Necrosis) {
           c->getBody().setConsumption(SIGNAL::EATME, -1.0 * c->health); // la cellule en nécrose ou en apoptose émet du eat-me proportionnellement à son niveau de vie
           }
-        
         }
       }
     }
