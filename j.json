@@ -13,7 +13,9 @@
     "inflaHealthImpact": 0.001,
     "red": 1.0,
     "green": 0.5,
-    "blue": 0.5
+    "blue": 0.5,
+    "type": "Immune",
+    "immuneType": "Resident"
   },
 
   "Stroma": {
@@ -29,7 +31,9 @@
     "inflaHealthImpact": 0.001,
     "red": 0.5,
     "green": 0.5,
-    "blue": 1.0
+    "blue": 1.0,
+    "type": "Stroma",
+    "immuneType": "None"
   },
 
   "ImmuneMaker": {
@@ -45,7 +49,9 @@
     "inflaHealthImpact": 0.0,
     "red": 1.0,
     "green": 0.5,
-    "blue": 0.0
+    "blue": 0.0,
+    "type": "ImmuneMaker",
+    "immuneType": "None"
   },
 
   "ImmuneCirculatory": {
@@ -62,7 +68,9 @@
     "extinctionProb": 0.005,
     "red": 1.0,
     "green": 1.0,
-    "blue": 0.0
+    "blue": 0.0,
+    "type": "Immune",
+    "immuneType": "Circulatory"
   },
 
   "mean": 4,

@@ -89,8 +89,27 @@ public:
 
   void init(Type type, nlohmann::json *js) { // Json added
     config = js;
+    
 
-    // COMPRESSER L'INITIALISATION : METTRE LE TYPE DANS LE JSON ?
+      // this->age = 0;
+      // this->eatenCounter = 0.0;
+      // this->shiftStep = 0;
+      // this->speed = (*config)["type"]["speed"];
+      // this->divisionProb = (*config)["type"]["divisionProb"];
+      // this->deathProb = (*config)["type"]["deathProb"];
+      // this->health = (*config)["type"]["health"];
+      // this->killing = (*config)["type"]["killing"];
+      // this->state = Alive;
+      // this->inflaProd = (*config)["type"]["inflaProd"];
+      // this->resoProd = (*config)["type"]["resoProd"];
+      // this->inflaDegrad = (*config)["type"]["inflaDegrad"];
+      // this->resoDegrad = (*config)["type"]["resoDegrad"];
+      // this->inflaHealthImpact = (*config)["type"]["inflaHealthImpact"];
+      // this->setColor((float)((*config)["type"]["red"]),
+      //           (float)((*config)["type"]["green"]),
+      //           (float)((*config)["type"]["blue"]));
+      // this->type = (Type)(*config)["type"]["type"];
+      // this->immuneType = (ImmuneType)(*config)["type"]["immuneType"];
 
     if (type == Immune) {
       this->age = 0;
@@ -201,14 +220,14 @@ public:
     }
 
     // PI + PR
-    double *avgInfla = 0.0;
+    double avgInfla = 0.0;
     updateSignal(&avgInfla, w);
 
     // Eat me
     eatme(w);
 
     // Disappearance of Circulatory cells after resolution of the inflammation
-    disappearanceCirculatory(&avgInfla);
+    disappearanceCirculatory(avgInfla);
 
 
     // Moving
@@ -264,8 +283,8 @@ public:
   // FUNCTIONS USED IN updateBehavior
 
   template <class W> void immuneMakerBehavior(W &w) {
-    // Number of ImmuneMaker cells : uniform distribution between 0 and 1 // PLUTOT UNE NORMALE
-    // You can change the minimum and maximum values in j.json file (lowValue and highValue)
+    // Number of ImmuneMaker cells : normal distribution 
+    // You can change the mean and the variance values in j.json file
 
     // Division proba
     if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]*10) {
@@ -290,13 +309,13 @@ public:
     c->type = Immune;
     c->init(Immune, config);
     c->eatenCounter = 0.0;
-    c->shiftStep = 0;
-    c->immuneType = Circulatory; // Circulatory cells created by ImmuneMaker
+    c->shiftStep = -5;
+    c->immuneType = Circulatory; // Circulatory cells created by ImmuneMaker cells
     c->speed = (float)((*config)["ImmuneCirculatory"]["speed"]); // Circulatory move faster
     c->divisionProb = (float)((*config)["ImmuneCirculatory"]["divisionProb"]);
     c->deathProb = (float)((*config)["ImmuneCirculatory"]["deathProb"]);
     c->inflaHealthImpact = (float)((*config)["ImmuneCirculatory"]["inflaHealthImpact"]);
-    c->inflaProd = (float)((*config)["ImmuneCirculatory"]["inflaProd"]); // Circulatory immune cell much more infla than the resident
+    c->inflaProd = (float)((*config)["ImmuneCirculatory"]["inflaProd"]); // Circulatory immune cell much more infla than the resident one
     c->resoProd = (float)((*config)["ImmuneCirculatory"]["resoProd"]);
     c->resoDegrad = (float)((*config)["ImmuneCirculatory"]["resoDegrad"]);
     c->inflaDegrad = (float)((*config)["ImmuneCirculatory"]["inflaDegrad"]);
@@ -396,6 +415,7 @@ public:
         this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
       c->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * c->health); // production depends on the life of the necrotic cell
       c->health -= killing;
+      //std::cerr << c->health << std::endl;
       this->eatenCounter +=killing;
     }
     return b;
@@ -426,24 +446,28 @@ public:
       }
 
     // Si une cellule a mangé et ne ressent plus de eat-me 
-    if (this->eatenCounter > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.0f) {
-      if (this->shiftStep <= 10){
-        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1-1/(1 + 0.1 * exp(-shiftStep+5))) * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]); //Production diminue
-        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1/(1+10 * exp(-shiftStep + 5))) * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]); // Production augmente
+    if (this->eatenCounter > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
+      //if (this->shiftStep <= 10){
+      if (this->shiftStep <= 20){
+        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1-1/(1 + 0.1 * exp(-shiftStep+5)))); // * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]); //Production diminue
+        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1/(1+10 * exp(-shiftStep + 5)))); // * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]); // Production augmente
         this->shiftStep++;
       }
-      else { // si 10 steps, reset des compteurs
+      else { // if 20 steps (end of the shift), counters reset to 0
         this->eatenCounter = 0.0;
-        this->shiftStep = 0;
+        if (immuneType == Circulatory) {
+          this->shiftStep = -5;
+        }
+        else {
+          this->shiftStep = 0;
+        }        
       }
 
     }
 
+    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad); // Evaporation
+    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, resoDegrad); // Evaporation
 
-
-
-    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad);
-    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, resoDegrad);
     if (this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] > 0.0f)
       this->setColor(0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.0);
     else if (type == Immune)
@@ -462,8 +486,6 @@ public:
       }
     }
   }
-
-
 
 
   bool moving() {
@@ -512,8 +534,6 @@ public:
         }
       }
     }
-
-    
 
     // Normalization of the probas
     if (sumSignals > 0.0) {
