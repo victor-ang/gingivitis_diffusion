@@ -229,13 +229,25 @@ public:
 
 
 
+  
+
+
+
+
+
+
+
+  // FUNCTIONS USED IN updateBehavior
+
   GingiCell<B> *divide() {
     // reset current cell
     // this->body.setRadius(20.); //(this->body.getBaseRadius())
     // this->body.setMass(this->body.getBaseMass());
 
     MecaCell::Vec randomVec = MecaCell::Vec::randomUnit();
-    MecaCell::Vec daughterPostion(this->getPosition() + randomVec * MecaCell::Config::DEFAULT_CELL_RADIUS * 0.75);
+    //MecaCell::Vec daughterPostion(this->getPosition() + randomVec * MecaCell::Config::DEFAULT_CELL_RADIUS * 0.75);
+    MecaCell::Vec daughterPostion(this->getPosition() + randomVec * this->getBoundingBoxRadius() * 0.75);
+
     GingiCell<B> *daughter = new GingiCell<B>(daughterPostion,this->getBody().getGrid());
 
     this->age = 0; // age of the new cell (daughter) after division
@@ -249,14 +261,6 @@ public:
     this->color[1] = g;
     this->color[2] = b;
   }
-
-
-
-
-
-
-
-  // FUNCTIONS USED IN updateBehavior
 
   template <class W> void immuneMakerBehavior(W &w) {
     // Number of ImmuneMaker cells : normal distribution 
