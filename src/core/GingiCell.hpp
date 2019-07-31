@@ -196,6 +196,9 @@ public:
         actionDone = eat();
       }
       if (!actionDone) {
+        actionDone = shift();
+      }
+      if (!actionDone) {
         actionDone = division(w);
       }
       // Disappearance of Circulatory cells after resolution of the inflammation
@@ -401,7 +404,8 @@ public:
       this->setColor(0.5, 0.5, 1.0);
   }
 
-  void shift() {
+  bool shift() {
+    bool hasShifted = false;
     // Si une cellule a mangé et ne ressent plus de eat-me
     if (this->eatenCounter > 0.0f &&
         this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
@@ -422,7 +426,9 @@ public:
           this->shiftStep = 0;
         }
       }
+      hasShifted = true;
     }
+    return hasShifted;
   }
 
   void disappearanceCirculatory() {
