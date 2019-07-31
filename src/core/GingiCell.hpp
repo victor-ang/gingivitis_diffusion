@@ -172,31 +172,32 @@ public:
     }
 
     else if (state == Apoptosis) {
-      eatme(w);
+      eatme();
       disappearance(Apoptosis); // Death
       moving();
     }
 
     else if (state == Necrosis) {
-      eatme(w);
+      eatme();
       disappearance(Necrosis);
-      updateSignal(w); // PR + PI
+      updateSignal(); // PR + PI
       moving();
+
+
     } else if (state == Alive) {
       bool actionDone = false;
+      signalsRelay();
+      moving();
       actionDone = toApoptosis();
       if (!actionDone) {
         actionDone = toNecrosis();
       }
       if (!actionDone) {
-        actionDone = division(w);
+        actionDone = eat();
       }
       if (!actionDone) {
-        actionDone = eat(); // Revoir cette fonction
+        actionDone = division(w);
       }
-
-      moving();
-
       // Disappearance of Circulatory cells after resolution of the inflammation
       disappearanceCirculatory();
     }
@@ -234,22 +235,12 @@ public:
     // Number of ImmuneMaker cells : normal distribution
     // Mean and the variance values in j.json file
 
-    // Division proba
-
-    // std::cerr<<this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] <<
-    // std::endl;
-
-    if (dice(MecaCell::Config::globalRand()) <
-        divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] *
-            10.0) {
+    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
       // The more inflammation there is, the more likely it is that the cell
       // will divide
       immuneCirculatoryCreation(w);
     }
-
-    setColor(1.0,
-             0.5 + 0.5 * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY],
-             this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
+    setColor(1.0, 0.5 + 0.5 * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY],this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
   }
 
   template <class W> void immuneCirculatoryCreation(W &w) {
@@ -314,8 +305,7 @@ public:
   bool toNecrosis() {
     bool necrosis = false;
     // Impact of inflammation on health
-    this->health -= this->inflaHealthImpact *
-                    this->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
+    this->health -= this->inflaHealthImpact * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
     if (this->health <= 0) {
       this->health = 1;
       this->state = Necrosis;
@@ -332,10 +322,8 @@ public:
       avgDist += (this->getPosition() - c->getPosition()).length();
     }
     avgDist /= this->getConnectedCells().size();
-    if (avgDist >
-        1.5 *
-            this->getBoundingBoxRadius()) { // Average distance greater than 1.5
-                                            // times the radius of a cell
+    if (avgDist > 1.5 * this->getBoundingBoxRadius()) { // Average distance greater than 1.5
+                                                        // times the radius of a cell
       if (dice(MecaCell::Config::globalRand()) < divisionProb * health) {
         if (!this->isDead()) {
           GingiCell<B> *daughter = divide();
@@ -345,6 +333,19 @@ public:
       }
     }
     return hasDivided;
+  }
+
+  void signalsRelay() {
+      for (GingiCell<B> *c : this->getConnectedCells()) {
+        double sumInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
+        double sumReso += c->getBody().getQuantities()[SIGNAL::RESOLUTIVE];
+      }
+      if (sumInfla > sumReso) {
+         this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
+      }
+      else {
+        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]);
+      }
   }
 
   bool eat() {
@@ -371,23 +372,36 @@ public:
         }
         c->health -= killing;
         this->eatenCounter += killing;
-        c->getBody().setConsumption(SIGNAL::INFLAMMATORY,
-                                    -inflaProd *
-                                        c->health); // production depends on the
-                                                    // life of the necrotic cell
+        c->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * c->health); // production depends on the
+                                                                                  // life of the necrotic cell
         hasEaten = true;
       }
     }
     return hasEaten;
   }
 
-  template <class W> void updateSignal(W &w) {
+  void updateSignal() {
     // Si une cellule ressent du eat-me d'une cellule en nécrose, elle émet un
     // gradient PI
     if (this->getBody().getQuantities()[SIGNAL::EATME] > 0.0f) {
       this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd);
     }
 
+    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad); // Evaporation
+    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, resoDegrad); // Evaporation
+
+    if (this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] > 0.0f)
+      this->setColor(
+          0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f,
+          0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f,
+          0.0);
+    else if (type == Immune)
+      this->setColor(1.0, 0.5, 0.5);
+    else if (type == Stroma)
+      this->setColor(0.5, 0.5, 1.0);
+  }
+
+  void shift() {
     // Si une cellule a mangé et ne ressent plus de eat-me
     if (this->eatenCounter > 0.0f &&
         this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
@@ -409,21 +423,6 @@ public:
         }
       }
     }
-
-    this->getBody().setConsumption(SIGNAL::INFLAMMATORY,
-                                   inflaDegrad); // Evaporation
-    this->getBody().setConsumption(SIGNAL::RESOLUTIVE,
-                                   resoDegrad); // Evaporation
-
-    if (this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] > 0.0f)
-      this->setColor(
-          0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f,
-          0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f,
-          0.0);
-    else if (type == Immune)
-      this->setColor(1.0, 0.5, 0.5);
-    else if (type == Stroma)
-      this->setColor(0.5, 0.5, 1.0);
   }
 
   void disappearanceCirculatory() {
@@ -532,7 +531,7 @@ public:
     }
   }
 
-  template <class W> void eatme(W &w) {
+  void eatme() {
     if (!this->isDead()) {
       if (this->state == Apoptosis || this->state == Necrosis) {
         this->getBody().setConsumption(
