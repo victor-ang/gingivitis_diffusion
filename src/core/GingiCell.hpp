@@ -238,7 +238,8 @@ public:
     // Number of ImmuneMaker cells : normal distribution
     // Mean and the variance values in j.json file
 
-    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
+    //if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
+    if (dice(MecaCell::Config::globalRand()) < 100000.0) {
       // The more inflammation there is, the more likely it is that the cell
       // will divide
       immuneCirculatoryCreation(w);
@@ -339,16 +340,18 @@ public:
   }
 
   void signalsRelay() {
-      for (GingiCell<B> *c : this->getConnectedCells()) {
-        double sumInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
-        double sumReso += c->getBody().getQuantities()[SIGNAL::RESOLUTIVE];
-      }
-      if (sumInfla > sumReso) {
-         this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
-      }
-      else {
-        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]);
-      }
+    double sumInfla = 0.0;
+    double sumReso = 0.0;
+    for (GingiCell<B> *c : this->getConnectedCells()) {
+      sumInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
+      sumReso += c->getBody().getQuantities()[SIGNAL::RESOLUTIVE];
+    }
+    if (sumInfla > sumReso) {
+        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
+    }
+    else {
+      this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]);
+    }
   }
 
   bool eat() {
@@ -438,7 +441,7 @@ public:
           this->die();
         }
       }
-    } 
+    }
   }
 
   void moving() {
@@ -454,16 +457,14 @@ public:
     double probas[neighbouringVoxelsNumber]; // table that contains the
                                              // probabilities of movement in
                                              // each direction
-    MecaCell::Vec
-        coord[neighbouringVoxelsNumber]; // table that contains the coordinates
+    MecaCell::Vec coord[neighbouringVoxelsNumber]; // table that contains the coordinates
                                          // of movement in each direction
     int cpt = 0;                         // to browse the tables
     double sumSignals = 0.0; // sum of the 3 signals of all neighboring voxels
     double prob = 0.0;       // sum of the 3 signals of each neighboring voxel
 
     // current position of the cell on the grid: center of the voxel cube
-    MecaCell::Vec posCenter =
-        this->getBody().getGrid()->getIndexFromPosition(this->getPosition());
+    MecaCell::Vec posCenter = this->getBody().getGrid()->getIndexFromPosition(this->getPosition());
 
     // we go through the whole cube (all the voxels), except the center (0,0,0)
     for (int x = -1; x <= 1; x++) {
@@ -540,10 +541,7 @@ public:
   void eatme() {
     if (!this->isDead()) {
       if (this->state == Apoptosis || this->state == Necrosis) {
-        this->getBody().setConsumption(
-            SIGNAL::EATME,
-            -1.0 *
-                this->health); // la cellule en nécrose ou en apoptose émet du
+        this->getBody().setConsumption(SIGNAL::EATME, -1.0 * this->health); // la cellule en nécrose ou en apoptose émet du
                                // eat-me proportionnellement à son niveau de vie
       }
     }
