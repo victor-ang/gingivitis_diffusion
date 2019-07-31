@@ -6,7 +6,7 @@
 #include "GingiScenario.hpp"
 #include <mecacell/mecacell.h>
 
-namespace Diffusion {
+//namespace Diffusion {
 
 enum SIGNAL { INFLAMMATORY = 0, RESOLUTIVE = 1, EATME = 2 };
 
@@ -168,7 +168,7 @@ public:
 
     // Constraining cells in the box
     constrainingCells(); 
-
+    double avgInfla = 0.0;
 
     // Immune maker behavior
     if (this->type == ImmuneMaker) {
@@ -176,52 +176,35 @@ public:
       return;
     }
 
-
-    // Death
-    if (state == Apoptosis || state == Necrosis) {
-      disappearance(state);
-      return;
-    }
-    
-    // Programmed death: apoptosis
-    if (dice(MecaCell::Config::globalRand()) < deathProb) { // random number between 0 and 1
-      apoptosis();
-      return;
+    else if (state == Apoptosis) {
+      eatme(w);
+      disappearance(Apoptosis); // Death
+      moving();
     }
 
-    // Impact of inflammation on health
-    this->health -= this->inflaHealthImpact * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
-    if (this->health <= 0) {
-      necrosis();
-      return;
+    else if (state == Necrosis) {
+      eatme(w);
+      disappearance(Necrosis);
+      updateSignal(&avgInfla,w); // PR + PI
+      moving();
     }
-
-    // Killing
-    for (GingiCell<B> *c : this->getConnectedCells()) {
-      if (kill(c) == true) {
-        return;
+    else if (state == Alive) {
+      bool actionDone = false;
+      actionDone = toApoptosis();
+      if (!actionDone) {
+        actionDone = toNecrosis();
       }
-    }
+      if (!actionDone) {
+        actionDone = division(w);
+      }
+      if (!actionDone) {
+        actionDone = kill(); // Revoir cette fonction
+      }
 
-    // PI + PR
-    double avgInfla = 0.0;
-    updateSignal(&avgInfla, w);
+      moving();
 
-    // Eat me
-    eatme(w);
-
-    // Disappearance of Circulatory cells after resolution of the inflammation
-    disappearanceCirculatory(avgInfla);
-
-
-    // Moving
-    if (moving() == false) {
-      randomMotion(); // if no gradients felt, random movement
-    }
-
-    // Division
-    if (division(w) == true) {
-      return;
+      // Disappearance of Circulatory cells after resolution of the inflammation
+      disappearanceCirculatory(avgInfla);
     }
   }
 
@@ -316,36 +299,39 @@ public:
 
   void disappearance(State state) {
 
+    if (health <= 0.0) {
+        this->die();
+    }
     if (state == Apoptosis) {
       this->setColor(health, health, health);
-      if (health <= 0.0) {
-        this->die();
-      }
-    } else if (state == Necrosis) {
+    }
+    else if (state == Necrosis) {
       this->setVisible(true);
       this->setColor(health, 0.0, health);
-      if (health <= 0.0) {
-        this->die();
-      }
     }
   }
 
-  void apoptosis() {
-
-    state = Apoptosis;
-    this->setVisible(true);
-    this->setColor(health, health, health);
+  bool toApoptosis() {
+    if (dice(MecaCell::Config::globalRand()) < deathProb) { // random number between 0 and 1
+      state = Apoptosis;
+      this->setVisible(true);
+      this->setColor(health, health, health);
+      return true;
+    }
   }
 
-  void necrosis() {
-
-    this->health = 1;
-    this->state = Necrosis;
-    this->setColor(health, 0.0, health);
+  bool toNecrosis() {
+    // Impact of inflammation on health
+    this->health -= this->inflaHealthImpact * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
+    if (this->health <= 0) {
+      this->health = 1;
+      this->state = Necrosis;
+      this->setColor(health, 0.0, health);
+      return true;
+    }
   }
 
   template <class W> bool division(W &w) {
-    bool b = false;
     double avgDist = 0.0;
     for (GingiCell<B> *c : this->getConnectedCells()) {
       avgDist += (this->getPosition() - c->getPosition()).length();
@@ -353,40 +339,39 @@ public:
     avgDist /= this->getConnectedCells().size();
     if (avgDist > 1.5 * this->getBoundingBoxRadius()) { // Average distance greater than 1.5
                                            			        // times the radius of a cell
-
       if (dice(MecaCell::Config::globalRand()) < divisionProb * health) {
         if (!this->isDead()) {
           GingiCell<B> *daughter = divide();
           w.addCell(daughter);
-          b = true;
+          return true;
         }
       }
     }
-    return b;
   }
 
-  bool kill(GingiCell<B> *c) {
-    bool b = false;
-    if (c->state == Apoptosis) {
-      if (type == Immune)
-        this->setColor(1.0, 0.5, 0.5);
-      else if (type == Stroma)
-        this->setColor(0.5, 0.5, 1.0);
-      c->health -= killing;
-      this->eatenCounter +=killing;
-      b = true;
-
-    } else if (c->state == Necrosis) {
-      if (type == Immune)
-        this->setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
-      else if (type == Stroma)
-        this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
-      c->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * c->health); // production depends on the life of the necrotic cell
-      c->health -= killing;
-      //std::cerr << c->health << std::endl;
-      this->eatenCounter +=killing;
+  bool kill() {
+    for (GingiCell<B> *c : this->getConnectedCells()) {
+      if (c->state == Apoptosis) {
+        c->health -= killing;
+        this->eatenCounter +=killing;
+        if (type == Immune)
+          this->setColor(1.0, 0.5, 0.5);
+        else if (type == Stroma)
+          this->setColor(0.5, 0.5, 1.0);
+      }
+      else if (c->state == Necrosis) {
+        if (type == Immune) {
+          this->setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
+        }
+        else if (type == Stroma) {
+          this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
+        }
+        c->health -= killing;
+        this->eatenCounter +=killing;
+        c->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * c->health); // production depends on the life of the necrotic cell
+      }
     }
-    return b;
+    return this->eatenCounter > 0;
   }
 
 
@@ -398,21 +383,11 @@ public:
                           c->getBody().getQuantities()[SIGNAL::RESOLUTIVE] / this->getConnectedCells().size(),(double)0);
      }
 
-    GingiCell<B> *closestNecroCell = nullptr;
-    for (GingiCell<B> *cell : w.cells) {
-      if (!cell->isDead() && cell != this) {
-        if (cell->state == Necrosis)  {
-          closestNecroCell = cell;
-          }
-        }
-      }
 
     // Si une cellule ressent du eat-me d'une cellule en nécrose, elle émet un gradient PI
-    if (closestNecroCell) {
-      if (this->getBody().getQuantities()[SIGNAL::EATME] > 0.0f) {
-        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd);
-      }
-
+    if (this->getBody().getQuantities()[SIGNAL::EATME] > 0.0f) {
+      this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd);
+    }
 
 
     // Si une cellule a mangé et ne ressent plus de eat-me 
@@ -445,8 +420,6 @@ public:
       this->setColor(0.5, 0.5, 1.0);
   }
 
-}
-
 
   void disappearanceCirculatory(double avgInfla) {
     if (avgInfla <= 0) {
@@ -457,8 +430,7 @@ public:
   }
 
 
-  bool moving() {
-    bool b = false;
+  void moving() {
 
     // biased movement according to gradient type
     float movFactorInfla = 1.0;
@@ -529,39 +501,31 @@ public:
     if (dir != MecaCell::Vec(0, 0, 0)) {
       //this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
       this->body.moveTo(this->getPosition() - dir);
-      b = true;
     }
 
+    // if no gradients felt, random movement
+    else if ( dir == MecaCell::Vec(0,0,0)) {
+      MecaCell::Vec dir;
+      dir = MecaCell::Vec::randomUnit();
+      dir *= speed;
+      this->body.moveTo(this->getPosition() - dir);
+    }
     
-    return b;
-    
-  }
-
-
-  void randomMotion() {
-    MecaCell::Vec dir;
-    dir = MecaCell::Vec::randomUnit();
-    dir *= speed;
-    this->body.moveTo(this->getPosition() - dir);
   }
 
 
 
   template <class W> void eatme(W &w) {
-    //GingiCell<B> *closestNecroCell = nullptr;
-    for (GingiCell<B> *c : w.cells) {
-      if (!c->isDead() && c != this) {
-        if (c->state == Apoptosis || c->state == Necrosis) {
-          c->getBody().setConsumption(SIGNAL::EATME, -1.0 * c->health); // la cellule en nécrose ou en apoptose émet du eat-me proportionnellement à son niveau de vie
-          }
-        }
+    if (!this->isDead()) {
+      if (this->state == Apoptosis || this->state == Necrosis) {
+        this->getBody().setConsumption(SIGNAL::EATME, -1.0 * this->health); // la cellule en nécrose ou en apoptose émet du eat-me proportionnellement à son niveau de vie
       }
     }
-
+  }
 
 };
 
-}
+//}
 
 
 #endif
