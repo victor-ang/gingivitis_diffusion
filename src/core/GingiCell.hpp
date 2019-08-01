@@ -375,14 +375,8 @@ public:
       sumInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
       sumReso += c->getBody().getQuantities()[SIGNAL::RESOLUTIVE];
     }
-    if (sumInfla > 0.0 || sumReso > 0.0) {
-      if (sumInfla > sumReso) { // if a cell feels more PI than PR, it increases its PI
-        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
-      }
-      else { // if a cell feels more PR than PI, it increases its PR
-        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd * this->getBody().getQuantities()[SIGNAL::RESOLUTIVE]);
-      }
-    }
+    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * 1-1/(1+0.1*exp(-10*(sumReso - sumInfla))));
+    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd * 1/(1+10*exp(-10*(sumReso - sumInfla))));
   }
 
   bool eat() {
