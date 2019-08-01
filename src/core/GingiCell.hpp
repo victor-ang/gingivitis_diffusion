@@ -369,14 +369,8 @@ public:
   }
 
   void signalsRelay() {
-    double sumInfla = 0.0;
-    double sumReso = 0.0;
-    for (GingiCell<B> *c : this->getConnectedCells()) {
-      sumInfla += c->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
-      sumReso += c->getBody().getQuantities()[SIGNAL::RESOLUTIVE];
-    }
-    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * 1-1/(1+0.1*exp(-10*(sumReso - sumInfla))));
-    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -resoProd * 1/(1+10*exp(-10*(sumReso - sumInfla))));
+    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - 0.25 * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
+    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - 0.25 * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
   }
 
   bool eat() {
