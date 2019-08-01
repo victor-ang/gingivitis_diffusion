@@ -109,7 +109,8 @@ public:
     }
   }
 
-  void assignParameters(Type type, ImmuneType immuneType, nlohmann::json *config) {
+  void assignParameters(Type type, ImmuneType immuneType, nlohmann::json *js) {
+    config = js;
     this->age = 0;
     this->eatenCounter = 0.0;
     this->shiftStep = (*config)[typeToString(type)][immuneTypeToString(immuneType)]["shiftStep"];
@@ -134,6 +135,7 @@ public:
   }
 
   void init(Type type, ImmuneType immuneType, nlohmann::json *js) {
+    config = js;
     if (type == Immune) {
       if (immuneType == Resident) {
         assignParameters(Immune, Resident, js);
@@ -146,7 +148,6 @@ public:
       assignParameters(ImmuneMaker, None, js);
     }
   }
-
   inline double getAdhesion() { return 1.; }
 
   // adhesion coefficient with other cells
@@ -162,7 +163,6 @@ public:
 
   template <class W> void updateBehavior(W &w) {
     this->age++;
-
     // Constraining cells in the box
     constrainingCells();
 
@@ -170,21 +170,19 @@ public:
     if (this->type == ImmuneMaker) {
       immuneMakerBehavior(w);
     }
-
-    else if (state == Apoptosis) {
+    else if (this->state == Apoptosis) {
       eatme();
       disappearance(Apoptosis); // Death
       moving();
     }
-
-    else if (state == Necrosis) {
+    else if (this->state == Necrosis) {
       eatme();
       disappearance(Necrosis);
       updateSignal(); // PR + PI
       moving();
 
 
-    } else if (state == Alive) {
+    } else if (this->state == Alive) {
       bool actionDone = false;
       signalsRelay();
       moving();
@@ -206,6 +204,11 @@ public:
     }
   }
 
+    
+    
+    
+    
+    
   // FUNCTIONS USED IN updateBehavior
 
   GingiCell<B> *divide() {
@@ -237,9 +240,8 @@ public:
   template <class W> void immuneMakerBehavior(W &w) {
     // Number of ImmuneMaker cells : normal distribution
     // Mean and the variance values in j.json file
-
     //if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
-    if (dice(MecaCell::Config::globalRand()) < 100000.0) {
+    if (dice(MecaCell::Config::globalRand()) < 1.0) {
       // The more inflammation there is, the more likely it is that the cell
       // will divide
       immuneCirculatoryCreation(w);
