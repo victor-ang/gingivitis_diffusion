@@ -16,7 +16,6 @@
       "red": 1.0,
       "green": 0.5,
       "blue": 0.5,
-      "immuneType": "Resident",
       "shiftStep": 0
     },
     "Circulatory": {
@@ -34,7 +33,6 @@
       "red": 1.0,
       "green": 1.0,
       "blue": 0.0,
-      "immuneType": "Circulatory",
       "shiftStep": -5
     }
   },
@@ -55,7 +53,6 @@
       "red": 0.5,
       "green": 0.5,
       "blue": 1.0,
-      "immuneType": "None",
       "shiftStep": 0
     }
   },
@@ -76,7 +73,6 @@
       "red": 1.0,
       "green": 0.5,
       "blue": 0.0,
-      "immuneType": "None",
       "shiftStep": 0
     }
   },
