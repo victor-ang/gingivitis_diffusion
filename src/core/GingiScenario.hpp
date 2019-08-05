@@ -165,6 +165,20 @@ public:
       }
 
       w.update();
+      if (w.getNbUpdates() == 20) {
+        auto& w = getWorld();
+        std::uniform_int_distribution<unsigned int> dist(0, w.cells.size());
+        Cell *c = w.cells[dist(MecaCell::Config::globalRand())];
+        c->state = Cell::Necrosis;
+        for (auto* nc : c->getConnectedCells()) {
+          for (auto *nnc : nc->getConnectedCells()) {
+            for (auto *nnnc : nnc->getConnectedCells()) {
+              nnnc->state = Cell::Necrosis;
+            }
+          }
+          
+        }
+      }
     }
   }
 

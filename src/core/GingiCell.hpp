@@ -55,7 +55,7 @@ public:
   int age;            // cell age
   float eatenCounterApoptosis; // counter of what the cell has eaten to an apoptotic cell
   float eatenCounterNecrosis; // counter of what the cell has eaten to an necrotic cell
-  int shiftStep;      // step for the shift M1/M2
+  int shiftStep;      // step for the shiftM1M2 M1/M2
 
   GingiCell(const MecaCell::Vec &v, DiffusionGrid *g)
       : Base(v), dice(0.0f, 1.0f) {
@@ -68,7 +68,7 @@ public:
   }
 
   void init(GingiCell<B> *mother) {
-
+    this->config = mother->config;
     this->speed = mother->speed;
     this->divisionProb = mother->divisionProb;
     this->deathProb = mother->deathProb;
@@ -178,18 +178,13 @@ public:
     // Immune maker behavior
     if (this->type == ImmuneMaker) {
       immuneMakerBehavior(w);
-    }
-    else if (this->state == Apoptosis) {
-      disappearance(Apoptosis); // Death
+    } else if (this->state == Apoptosis) {
+      disappearance(); // Death
       eatme();
-      moving();
-    }
-    else if (this->state == Necrosis) {
-      disappearance(Necrosis);
+    } else if (this->state == Necrosis) {
+      disappearance();
       eatme();
-      moving();
-    }
-    else if (this->state == Alive) {
+    } else if (this->state == Alive) {
       bool actionDone = false;
       signalsRelay();
       moving();
@@ -201,7 +196,7 @@ public:
         actionDone = eat();
       }
       if (!actionDone) {
-        actionDone = shift(config); // Shift M1/M2
+        actionDone = shiftM1M2(config); // Shift M1/M2
       }
       if (!actionDone) {
         actionDone = division(w);
@@ -256,7 +251,7 @@ public:
   }
 
   template <class W> void immuneMakerBehavior(W &w) {
-    if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
+    if (dice(MecaCell::Config::globalRand()) < this->divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
       // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
     }
@@ -281,22 +276,28 @@ public:
     MecaCell::Vec pos = MecaCell::Vec(this->getPosition());
     float minPos = -250.0f;
     float maxPos = 250.0f;
-    if (pos.x() < minPos)
+    if (pos.x() < minPos) {
       pos.setX(minPos);
-    if (pos.x() > maxPos)
+    }
+    if (pos.x() > maxPos) {
       pos.setX(maxPos);
-    if (pos.y() < minPos)
+    }
+    if (pos.y() < minPos) {
       pos.setY(minPos);
-    if (pos.y() > maxPos)
+    }
+    if (pos.y() > maxPos) {
       pos.setY(maxPos);
-    if (pos.z() < minPos)
+    }
+    if (pos.z() < minPos) {
       pos.setZ(minPos);
-    if (pos.z() > maxPos)
+    }
+    if (pos.z() > maxPos) {
       pos.setZ(maxPos);
+    }
     this->body.moveTo(pos);
   }
 
-  void disappearance(State state) {
+  void disappearance() {
     if (health <= 0.0) {
       this->die();
     }
@@ -305,7 +306,7 @@ public:
   bool toApoptosis() {
     bool apoptosis = false;
     if (dice(MecaCell::Config::globalRand()) < deathProb) { // random number between 0 and 1
-      state = Apoptosis;
+      this->state = Apoptosis;
       this->setVisible(true);
       assignColor(1);
       apoptosis = true;
@@ -374,7 +375,6 @@ public:
   }
 
   bool eat() {
-    
     bool hasEaten = false;
     for (GingiCell<B> *c : this->getConnectedCells()) {
       if (c->state == Apoptosis) {
@@ -382,10 +382,11 @@ public:
         // If one of the neighbouring cells is in apoptosis, the central cell eats it.
         c->health -= killing;
         this->eatenCounterApoptosis += killing;
-        if (type == Immune)
+        if (type == Immune) {
           assignColor(3);
-        else if (type == Stroma)
+        } else if (type == Stroma) {
           assignColor(4);
+        }
         hasEaten = true;
       } else if (c->state == Necrosis) {
         // We go through all the neighbouring cells. 
@@ -406,25 +407,23 @@ public:
   }
 
 
-  bool shift(nlohmann::json *js) {
+  bool shiftM1M2(nlohmann::json *js) {
     config = js; // json
     bool hasShifted = false;
     int shiftDuration = 20;
     // If a cell has eaten and no longer feels eat-me
     if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
       if (this->shiftStep <= shiftDuration) {
-
         // Sigmoid
         this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1 - 1 / (1 + 0.1 * exp(-shiftStep + 5))) * inflaProd); // Production decreases
         this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1 / (1 + 10 * exp(-shiftStep + 5))) * resoProd); // Production increases
         this->shiftStep++;
-      } else { // if (end of the shift), counters reset
+      } else { // if (end of the shiftM1M2), counters reset
         this->eatenCounterNecrosis = 0.0;
         this->shiftStep = (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"];
       }
       hasShifted = true;
-    }
-    else if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] > 0.001f) {
+    } else if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] > 0.001f) {
       if (this->shiftStep > (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"]) {
         this->shiftStep --;
       }

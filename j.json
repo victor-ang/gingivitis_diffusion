@@ -60,7 +60,7 @@
   "ImmuneMaker": {
     "None": {
       "speed": 0.0,
-      "divisionProb": 1.0,
+      "divisionProb": 100.0,
       "deathProb": 0.0,
       "health": 100000.0,
       "killing": 0.0,
@@ -77,7 +77,7 @@
     }
   },
 
-  "mean": 4,
+  "mean": 20,
   "variance": 1,
   "nbCells": 2850,
   "ratioImmuneStromal": 0.25
