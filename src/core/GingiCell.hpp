@@ -168,8 +168,8 @@ public:
     // Constraining cells in the box
     constrainingCells();
 
+    // Impact of inflammation on  health
     this->health -= this->inflaHealthImpact * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY];
-
 
     this->getBody().setConsumption(SIGNAL::INFLAMMATORY, inflaDegrad); // Evaporation
     this->getBody().setConsumption(SIGNAL::RESOLUTIVE, resoDegrad); // Evaporation
@@ -256,8 +256,6 @@ public:
   }
 
   template <class W> void immuneMakerBehavior(W &w) {
-    // Number of ImmuneMaker cells : normal distribution
-    // Mean and the variance values in j.json file
     if (dice(MecaCell::Config::globalRand()) < divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
       // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
@@ -271,7 +269,6 @@ public:
     // 	- Do not die of apoptosis
     //	- Move faster than Resident cells
     //	- Produce more inflammation than Residents cells
-    //	- Pro-resolutive after the switch
     //	- Disappear when there is no more inflammation
 
     GingiCell<B> *c = divide();
@@ -369,8 +366,11 @@ public:
   }
 
   void signalsRelay() {
-    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - 0.25 * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
-    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - 0.25 * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
+    double attenuationFactor = 0.1;
+
+    // Sigmoid
+    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - attenuationFactor * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
+    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - attenuationFactor * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
   }
 
   bool eat() {
@@ -407,18 +407,18 @@ public:
 
 
   bool shift(nlohmann::json *js) {
-    config = js;
+    config = js; // json
     bool hasShifted = false;
+    int shiftDuration = 20;
     // If a cell has eaten and no longer feels eat-me
     if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
-      // if (this->shiftStep <= 10){
-      if (this->shiftStep <= 20) {
+      if (this->shiftStep <= shiftDuration) {
 
-        // BUG ICI : EMET DU PI MEME SI LE EAT ME PROVENAIT D'UNE CELLULE EN INFLA
+        // Sigmoid
         this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1 - 1 / (1 + 0.1 * exp(-shiftStep + 5))) * inflaProd); // Production decreases
         this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1 / (1 + 10 * exp(-shiftStep + 5))) * resoProd); // Production increases
         this->shiftStep++;
-      } else { // if 20 steps (end of the shift), counters reset
+      } else { // if (end of the shift), counters reset
         this->eatenCounterNecrosis = 0.0;
         this->shiftStep = (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"];
       }
@@ -435,7 +435,7 @@ public:
   void disappearanceCirculatory() {
     if (this->immuneType == Circulatory) {
       if (this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] <= 0.001) {
-        if (dice(MecaCell::Config::globalRand()) < extinctionProb) {
+        if (dice(MecaCell::Config::globalRand()) < extinctionProb) { // random number
           this->die();
         }
       }
@@ -530,6 +530,7 @@ public:
     if (!this->isDead()) {
       if (this->state == Apoptosis || this->state == Necrosis) {
         if (this->state == Necrosis) {
+          // a cell in necrosis produces infla (depends on its life)
           this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * this->health);
           assignColor(7);
         }
