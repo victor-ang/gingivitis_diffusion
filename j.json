@@ -77,7 +77,7 @@
     }
   },
 
-  "mean": 20,
+  "mean": 5,
   "variance": 1,
   "nbCells": 2850,
   "ratioImmuneStromal": 0.25

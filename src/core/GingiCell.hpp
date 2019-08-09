@@ -37,6 +37,7 @@ public:
   std::uniform_real_distribution<float> dice;
 
   nlohmann::json *config;
+  
   float speed;        // cell movement speed
   float divisionProb; // probability of cell division
   float deathProb;    // probability of apoptosis
@@ -110,8 +111,9 @@ public:
     }
   }
 
-  void assignParameters(Type type, ImmuneType immuneType, nlohmann::json *js) {
-    config = js;
+
+
+  void assignParameters(Type type, ImmuneType immuneType) {
     this->age = 0;
     this->eatenCounterApoptosis = 0.0;
     this->eatenCounterNecrosis = 0.0;
@@ -138,16 +140,17 @@ public:
 
   void init(Type type, ImmuneType immuneType, nlohmann::json *js) {
     config = js;
+    
     if (type == Immune) {
       if (immuneType == Resident) {
-        assignParameters(Immune, Resident, js);
+        assignParameters(Immune, Resident);
       } else if (immuneType == Circulatory) {
-        assignParameters(Immune, Circulatory, js);
+        assignParameters(Immune, Circulatory);
       }
     } else if (type == Stroma) {
-      assignParameters(Stroma, None, js);
+      assignParameters(Stroma, None);
     } else if (type == ImmuneMaker) {
-      assignParameters(ImmuneMaker, None, js);
+      assignParameters(ImmuneMaker, None);
     }
   }
   inline double getAdhesion() { return 1.; }
@@ -196,7 +199,7 @@ public:
         actionDone = eat();
       }
       if (!actionDone) {
-        actionDone = shiftM1M2(config); // Shift M1/M2
+        actionDone = shiftM1M2(); // Shift M1/M2
       }
       if (!actionDone) {
         actionDone = division(w);
@@ -407,25 +410,26 @@ public:
   }
 
 
-  bool shiftM1M2(nlohmann::json *js) {
-    config = js; // json
+  bool shiftM1M2() {
     bool hasShifted = false;
     int shiftDuration = 20;
     // If a cell has eaten and no longer feels eat-me
-    if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
-      if (this->shiftStep <= shiftDuration) {
-        // Sigmoid
-        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1 - 1 / (1 + 0.1 * exp(-shiftStep + 5))) * inflaProd); // Production decreases
-        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1 / (1 + 10 * exp(-shiftStep + 5))) * resoProd); // Production increases
-        this->shiftStep++;
-      } else { // if (end of the shiftM1M2), counters reset
-        this->eatenCounterNecrosis = 0.0;
-        this->shiftStep = (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"];
-      }
-      hasShifted = true;
-    } else if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] > 0.001f) {
-      if (this->shiftStep > (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"]) {
-        this->shiftStep --;
+    if (this->type == Immune) {
+      if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] <= 0.001f) {
+        if (this->shiftStep <= shiftDuration) {
+          // Sigmoid
+          this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1 - 1 / (1 + 0.1 * exp(-shiftStep + 5))) * inflaProd); // Production decreases
+          this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1 / (1 + 10 * exp(-shiftStep + 5))) * resoProd); // Production increases
+          this->shiftStep++;
+        } else { // if (end of the shiftM1M2), counters reset
+          this->eatenCounterNecrosis = 0.0;
+          this->shiftStep = (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"];
+        }
+        hasShifted = true;
+      } else if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] > 0.001f) {
+        if (this->shiftStep > (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"]) {
+          this->shiftStep --;
+        }
       }
     }
     return hasShifted;

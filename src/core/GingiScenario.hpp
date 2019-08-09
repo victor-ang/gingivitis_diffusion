@@ -14,7 +14,7 @@ public:
   using World = MecaCell::World<Cell>;
 
   World w;
-  nlohmann::json js;
+  nlohmann::json config;
 
   GingiScenario() {}
 
@@ -24,7 +24,7 @@ public:
 
   void init() {
 
-    js = loadJsonConfig("../j.json");
+    config = loadJsonConfig("../j.json");
     Molecule infla(400.0, 0.0, 1.0, 0.1);
     Molecule reso(400.0, 0.0, 1.0, 0.1);
     Molecule eatme(600.0, 0.0, 1.0, 0.1);
@@ -51,8 +51,8 @@ public:
     std::uniform_real_distribution<double> nDist(-BOX_HALF_SIZE, BOX_HALF_SIZE);
 
     // Immune cells
-    int nCells = js["nbCells"]; // Number of cells at the beginning
-    float ratio = js["ratioImmuneStromal"]; // Ratio Immune/Stromale
+    int nCells = config["nbCells"]; // Number of cells at the beginning
+    float ratio = config["ratioImmuneStromal"]; // Ratio Immune/Stromale
     int k = 0;
     Cell *c;
     while (k < nCells * ratio) {
@@ -61,7 +61,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::Immune, Cell::Resident, &js);
+      c->init(Cell::Immune, Cell::Resident, &config);
       w.addCell(c);
     }
     while (k < nCells) {
@@ -70,7 +70,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::Stroma, Cell::None, &js); // ajout du json
+      c->init(Cell::Stroma, Cell::None, &config); // ajout du json
       w.addCell(c);
     }
 
@@ -78,7 +78,7 @@ public:
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::normal_distribution<> d(js["mean"],js["variance"]);
+    std::normal_distribution<> d(config["mean"],config["variance"]);
     int nbImmuneMaker = d(gen);
 
     for (int k = 0; k < nbImmuneMaker; k++) {
@@ -86,7 +86,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::ImmuneMaker, Cell::None, &js);
+      c->init(Cell::ImmuneMaker, Cell::None, &config);
       w.addCell(c);
     }
 
@@ -165,20 +165,20 @@ public:
       }
 
       w.update();
-      if (w.getNbUpdates() == 20) {
-        auto& w = getWorld();
-        std::uniform_int_distribution<unsigned int> dist(0, w.cells.size());
-        Cell *c = w.cells[dist(MecaCell::Config::globalRand())];
-        c->state = Cell::Necrosis;
-        for (auto* nc : c->getConnectedCells()) {
-          for (auto *nnc : nc->getConnectedCells()) {
-            for (auto *nnnc : nnc->getConnectedCells()) {
-              nnnc->state = Cell::Necrosis;
-            }
-          }
+      // if (w.getNbUpdates() == 20) {
+      //   auto& w = getWorld();
+      //   std::uniform_int_distribution<unsigned int> dist(0, w.cells.size());
+      //   Cell *c = w.cells[dist(MecaCell::Config::globalRand())];
+      //   c->state = Cell::Necrosis;
+      //   for (auto* nc : c->getConnectedCells()) {
+      //     for (auto *nnc : nc->getConnectedCells()) {
+      //       for (auto *nnnc : nnc->getConnectedCells()) {
+      //         nnnc->state = Cell::Necrosis;
+      //       }
+      //     }
           
-        }
-      }
+      //   }
+      // }
     }
   }
 
