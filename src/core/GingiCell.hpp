@@ -34,6 +34,17 @@ public:
     Circulatory
   };
 
+  // enum assignColor {
+  //   setColor(health, health, health) = 0,
+  //   setColor(health, 0.0, health) = 1,
+  //   setColor(1.0, 0.5, 0.5) = 2,
+  //   setColor(0.5, 0.5, 1.0) = 3,
+  //   setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) = 4,
+  //   setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0) = 5,
+  //   setColor(0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.0) = 6,
+  //   setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0) = 7
+  // };
+
   std::uniform_real_distribution<float> dice;
 
   nlohmann::json *config;
@@ -138,17 +149,21 @@ public:
     this->type = type;
   }
 
-  void init(Type type, ImmuneType immuneType, nlohmann::json *js) {
+  void init(Type type, ImmuneType immuneType, nlohmann::json *js, double apop,double div) {
     config = js;
     
     if (type == Immune) {
       if (immuneType == Resident) {
         assignParameters(Immune, Resident);
+        this->deathProb = apop;
+        this->divisionProb = div;
       } else if (immuneType == Circulatory) {
         assignParameters(Immune, Circulatory);
       }
     } else if (type == Stroma) {
       assignParameters(Stroma, None);
+      this->deathProb = apop;
+      this->divisionProb = div;
     } else if (type == ImmuneMaker) {
       assignParameters(ImmuneMaker, None);
     }
@@ -247,11 +262,10 @@ public:
       case 7: // inflamed cell
         this->setColor(0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.0);
         break;
-      case 8: // biaised movement
-        this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
-        break; 
     }
   }
+
+  
 
   template <class W> void immuneMakerBehavior(W &w) {
     if (dice(MecaCell::Config::globalRand()) < this->divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
@@ -270,7 +284,7 @@ public:
     //	- Disappear when there is no more inflammation
 
     GingiCell<B> *c = divide();
-    c->init(Immune, Circulatory, config);
+    c->init(Immune, Circulatory, config,0,0);
     w.addCell(c);
   }
 
@@ -311,6 +325,7 @@ public:
     if (dice(MecaCell::Config::globalRand()) < deathProb) { // random number between 0 and 1
       this->state = Apoptosis;
       this->setVisible(true);
+      //this->assignColor::0;
       assignColor(1);
       apoptosis = true;
     }
@@ -323,6 +338,7 @@ public:
     if (this->health <= 0) {
       this->health = 1;
       this->state = Necrosis;
+      //this->assignColor::1;
       assignColor(2);
       necrosis = true;
     }
@@ -386,8 +402,10 @@ public:
         c->health -= killing;
         this->eatenCounterApoptosis += killing;
         if (type == Immune) {
+          //this->assignColor::2;
           assignColor(3);
         } else if (type == Stroma) {
+          //this->assignColor::3;
           assignColor(4);
         }
         hasEaten = true;
@@ -395,8 +413,10 @@ public:
         // We go through all the neighbouring cells. 
         // f one of the neighbouring cells is in necrosis, the central cell eats it and produces infla
         if (type == Immune) {
+          //this->assignColor::4;
           assignColor(5);
         } else if (type == Stroma) {
+          //this->assignColor::5;
           assignColor(6);
         }
         c->health -= killing;
@@ -516,7 +536,6 @@ public:
 
     // Biaised movement
     if (dir != MecaCell::Vec(0, 0, 0)) {
-      assignColor(8);
       this->body.moveTo(this->getPosition() - dir);
     }
 
@@ -535,6 +554,7 @@ public:
         if (this->state == Necrosis) {
           // a cell in necrosis produces infla (depends on its life)
           this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -inflaProd * this->health);
+          //this->assignColor::6;
           assignColor(7);
         }
         this->getBody().setConsumption(SIGNAL::EATME, -1.0 * this->health); // the cell in necrosis or apoptosis emits eat-me

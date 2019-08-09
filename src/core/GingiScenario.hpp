@@ -14,6 +14,10 @@ public:
   using World = MecaCell::World<Cell>;
 
   World w;
+  int apopS;
+  int apopI;
+  int divS;
+  int divI;
   nlohmann::json config;
 
   GingiScenario() {}
@@ -22,8 +26,11 @@ public:
 
   inline World &getWorld() { return w; }
 
-  void init() {
-
+  void init(double apopStroma, double apopImmune, double divStroma, double divImmune, int AS, int AI, int DS, int DI) {
+    apopS = AS;
+    apopI = AI;
+    divS = DS;
+    divI = DI;
     config = loadJsonConfig("../j.json");
     Molecule infla(400.0, 0.0, 1.0, 0.1);
     Molecule reso(400.0, 0.0, 1.0, 0.1);
@@ -61,7 +68,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::Immune, Cell::Resident, &config);
+      c->init(Cell::Immune, Cell::Resident, &config,apopImmune,divImmune);
       w.addCell(c);
     }
     while (k < nCells) {
@@ -70,7 +77,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::Stroma, Cell::None, &config); // ajout du json
+      c->init(Cell::Stroma, Cell::None, &config,apopStroma,divStroma);
       w.addCell(c);
     }
 
@@ -86,7 +93,7 @@ public:
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
-      c->init(Cell::ImmuneMaker, Cell::None, &config);
+      c->init(Cell::ImmuneMaker, Cell::None, &config,0,0);
       w.addCell(c);
     }
 
@@ -156,33 +163,38 @@ public:
              << nbAliveImmuneCirculatory << "\t" << nbApopImmune << "\t"
              << nbNecroImmune << "\t" << nbImmuneMaker << "\t" << avgInfla
              << endl;
+             
+        
+        std::string fileName = "../Simulations/Sim1/data"; // file name
+        std::string extension = ".csv"; // extension
+        std::stringstream fichier; // fichier à ouvrir
+        fichier << fileName << apopS <<"_"<< apopI <<"_"<< divS <<"_"<< divI << extension; // nouveau nom
+
         writeToCSV(w.getNbUpdates(), w.cells.size(), nbAliveStroma,
                    nbApopStroma, nbNecroStroma, nbAliveImmune,
                    nbAliveImmuneResident, nbAliveImmuneCirculatory,
-                   nbApopImmune, nbNecroImmune, nbImmuneMaker, avgInfla);
+                   nbApopImmune, nbNecroImmune, nbImmuneMaker, avgInfla,fichier.str().c_str());
+
 
         // myfile.close(); // Fermeture du csv contenant toutes les cellules
       }
 
       w.update();
-      // if (w.getNbUpdates() == 20) {
+      // if (w.getNbUpdates() == 10) {
       //   auto& w = getWorld();
       //   std::uniform_int_distribution<unsigned int> dist(0, w.cells.size());
       //   Cell *c = w.cells[dist(MecaCell::Config::globalRand())];
       //   c->state = Cell::Necrosis;
       //   for (auto* nc : c->getConnectedCells()) {
       //     for (auto *nnc : nc->getConnectedCells()) {
-      //       for (auto *nnnc : nnc->getConnectedCells()) {
-      //         nnnc->state = Cell::Necrosis;
-      //       }
+      //       nnc->state = Cell::Necrosis;
       //     }
-          
       //   }
       // }
     }
   }
 
-  bool stop() { return false; }
+  bool stop() { return w.getNbUpdates() >= 2000; } // return false pour ne pas s'arreter
 
   // Import json file
   nlohmann::json loadJsonConfig(std::string fileName) {
@@ -198,11 +210,11 @@ public:
                   int nbNecroStroma, int nbAliveImmune,
                   int nbAliveImmuneResident, int nbAliveImmuneCirculatory,
                   int nbApopImmune, int nbNecroImmune, int nbImmuneMaker,
-                  float avgInfla) {
+                  float avgInfla, string path) {
     std::ofstream myfile;
 
     if (nbIter == 0) {
-      myfile.open("../data.csv", std::ofstream::trunc);
+      myfile.open(path, std::ofstream::trunc);
       myfile << "Nombre d'itérations"
              << ","
              << "Nombre de cellules"
@@ -228,7 +240,7 @@ public:
              << "Moyenne de l'inflammation" << std::endl;
       myfile.close();
     }
-    myfile.open("../data.csv", std::ofstream::app);
+    myfile.open(path, std::ofstream::app);
     myfile << nbIter << "," << nbCells << "," << nbAliveStroma << ","
            << nbApopStroma << "," << nbNecroStroma << "," << nbAliveImmune
            << "," << nbAliveImmuneResident << "," << nbAliveImmuneCirculatory
