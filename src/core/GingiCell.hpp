@@ -516,7 +516,7 @@ public:
 
     // Biaised movement
     if (dir != MecaCell::Vec(0, 0, 0)) {
-      assignColor(8);
+      //assignColor(8);
       this->body.moveTo(this->getPosition() - dir);
     }
 
