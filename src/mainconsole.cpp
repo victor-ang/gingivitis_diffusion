@@ -14,14 +14,14 @@ int main(int argc, char *argv[]) {
     dirname << "../Simulations/" << valMS;
     mkdir(dirname.str().c_str(), 0777);
     using scenario_t = GingiScenario;
-    for (int AS = 8; AS>=8; AS--) {
-        for (int AI = 8; AI>=8; AI--) {
-            for (int DS = 5; DS>=5; DS--) {
+    for (int AS = 8; AS>=3; AS--) {
+        for (int AI = 8; AI>=3; AI--) {
+            for (int DS = 5; DS>=2; DS--) {
                 #pragma omp parallel for
                 for (int DI = 5; DI>=2; DI--) {
                     stringstream path;
                     //std::ofstream myfile;
-                    std::cout << "DI=" << DI << std::endl;
+                    //std::cout << "DI=" << DI << std::endl;
                     path << dirname.str() << "/data" << AS <<"_"<< AI <<"_"<< DS <<"_"<< DI << ".csv"; // nouveau nom
                     //myfile.open(path, std::ofstream::app);
                     scenario_t scenar;
