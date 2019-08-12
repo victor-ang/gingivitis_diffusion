@@ -227,7 +227,7 @@ public:
     }
   }
 
-  bool stop() { return w.getNbUpdates() >= 100; } // return false pour ne pas s'arreter
+  bool stop() { return w.getNbUpdates() >= 2000; } // return false pour ne pas s'arreter
 
   // Import json file
   nlohmann::json loadJsonConfig(std::string fileName) {
