@@ -371,7 +371,7 @@ public:
 
   void signalsRelay() {
     double attenuationFactor = 0.1;
-
+    // Rajouter une condition pour savoir si la cellule n'a pas mangé et donc pas commencé le shift??
     // Sigmoid
     this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - attenuationFactor * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
     this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - attenuationFactor * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
@@ -429,6 +429,7 @@ public:
       } else if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] > 0.001f) {
         if (this->shiftStep > (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"]) {
           this->shiftStep --;
+          // PRODUCTION A RAJOUTER !
         }
       }
     }
