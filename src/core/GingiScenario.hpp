@@ -6,6 +6,8 @@
 #include <mecacell/mecacell.h>
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <sys/stat.h>
 
 class GingiScenario {
 
@@ -14,10 +16,11 @@ public:
   using World = MecaCell::World<Cell>;
 
   World w;
-  int apopS;
-  int apopI;
-  int divS;
-  int divI;
+  std::ofstream myfile;
+  //std::string pathOutput;
+  
+  
+
   nlohmann::json config;
 
   GingiScenario() {}
@@ -26,11 +29,10 @@ public:
 
   inline World &getWorld() { return w; }
 
-  void init(double apopStroma, double apopImmune, double divStroma, double divImmune, int AS, int AI, int DS, int DI) {
-    apopS = AS;
-    apopI = AI;
-    divS = DS;
-    divI = DI;
+  void init(double apopStroma, double apopImmune, double divStroma, double divImmune, std::string path) {
+    //std::cout << apopStroma << "_" << apopImmune << "_"<< divStroma << "_"<< divImmune << "_"<< _pathOutput << std::endl;
+    myfile.open(path, std::ofstream::app);
+
     config = loadJsonConfig("../j.json");
     Molecule infla(400.0, 0.0, 1.0, 0.1);
     Molecule reso(400.0, 0.0, 1.0, 0.1);
@@ -39,6 +41,8 @@ public:
     w.cellPlugin.diffusionPlugin.addMolecule(infla);
     w.cellPlugin.diffusionPlugin.addMolecule(reso);
     w.cellPlugin.diffusionPlugin.addMolecule(eatme);
+
+    
 
     w.setDt(1);
     // Add cells
@@ -101,9 +105,41 @@ public:
   }
 
   void loop() {
+    
+
     if (!stop()) {
 
+      w.update();
+
+      if (w.getNbUpdates() == 1) {
+        myfile << "nbIter"
+              << ","
+              << "nbCells"
+              << ","
+              << "nbAliveStroma"
+              << ","
+              << "nbApopStroma"
+              << ","
+              << "nbNecroStroma"
+              << ","
+              << "nbAliveImmune"
+              << ","
+              << "nbAliveImmuneResident"
+              << ","
+              << "nbAliveImmuneCirculatory"
+              << ","
+              << "nbApopImmune"
+              << ","
+              << "nbNecroImmune"
+              << ","
+              << "nbImmuneMaker"
+              << ","
+              << "avgIngla" << std::endl;
+      }
+
       if (w.getNbUpdates() % 1 == 0) {
+
+        
 
         // Création de fichiers (1 par step) qui contiennent les infos des cellules
 
@@ -164,22 +200,19 @@ public:
              << nbNecroImmune << "\t" << nbImmuneMaker << "\t" << avgInfla
              << endl;
              
-        
-        std::string fileName = "../Simulations/Sim1/data"; // file name
-        std::string extension = ".csv"; // extension
-        std::stringstream fichier; // fichier à ouvrir
-        fichier << fileName << apopS <<"_"<< apopI <<"_"<< divS <<"_"<< divI << extension; // nouveau nom
-
-        writeToCSV(w.getNbUpdates(), w.cells.size(), nbAliveStroma,
-                   nbApopStroma, nbNecroStroma, nbAliveImmune,
-                   nbAliveImmuneResident, nbAliveImmuneCirculatory,
-                   nbApopImmune, nbNecroImmune, nbImmuneMaker, avgInfla,fichier.str().c_str());
+        myfile << w.getNbUpdates() << "," << w.cells.size() << "," << nbAliveStroma << ","
+           << nbApopStroma << "," << nbNecroStroma << "," << nbAliveImmune
+           << "," << nbAliveImmuneResident << "," << nbAliveImmuneCirculatory
+           << "," << nbApopImmune << "," << nbNecroImmune << ","
+           << nbImmuneMaker << "," << avgInfla << std::endl;
 
 
         // myfile.close(); // Fermeture du csv contenant toutes les cellules
       }
 
-      w.update();
+
+
+
       // if (w.getNbUpdates() == 10) {
       //   auto& w = getWorld();
       //   std::uniform_int_distribution<unsigned int> dist(0, w.cells.size());
@@ -194,7 +227,7 @@ public:
     }
   }
 
-  bool stop() { return w.getNbUpdates() >= 2000; } // return false pour ne pas s'arreter
+  bool stop() { return w.getNbUpdates() >= 100; } // return false pour ne pas s'arreter
 
   // Import json file
   nlohmann::json loadJsonConfig(std::string fileName) {
@@ -206,48 +239,22 @@ public:
   }
 
   // Function to export values step by step (1row-> average of cells) to csv
-  void writeToCSV(int nbIter, int nbCells, int nbAliveStroma, int nbApopStroma,
-                  int nbNecroStroma, int nbAliveImmune,
-                  int nbAliveImmuneResident, int nbAliveImmuneCirculatory,
-                  int nbApopImmune, int nbNecroImmune, int nbImmuneMaker,
-                  float avgInfla, string path) {
-    std::ofstream myfile;
+  // void writeToCSV(std::ofstream myfile, int nbIter, int nbCells, int nbAliveStroma, int nbApopStroma,
+  //                 int nbNecroStroma, int nbAliveImmune,
+  //                 int nbAliveImmuneResident, int nbAliveImmuneCirculatory,
+  //                 int nbApopImmune, int nbNecroImmune, int nbImmuneMaker,
+  //                 float avgInfla) {
+  //   //std::ofstream file = myfile;
 
-    if (nbIter == 0) {
-      myfile.open(path, std::ofstream::trunc);
-      myfile << "Nombre d'itérations"
-             << ","
-             << "Nombre de cellules"
-             << ","
-             << "Nombre de cellules stromales vivantes"
-             << ","
-             << "Nombre de cellules stromales en apoptose"
-             << ","
-             << "Nombre de cellules stromales en nécrose"
-             << ","
-             << "Nombre de cellules immunitaires vivantes"
-             << ","
-             << "Nombre de cellules immunitaires résidentes vivantes"
-             << ","
-             << "Nombre de vellules immunitaires circulantes vivantes"
-             << ","
-             << "Nombre de cellules immunitaires en apoptose"
-             << ","
-             << "Nombre de cellules immunitaires en nécrose"
-             << ","
-             << "Nombre d'ImmuneMaker"
-             << ","
-             << "Moyenne de l'inflammation" << std::endl;
-      myfile.close();
-    }
-    myfile.open(path, std::ofstream::app);
-    myfile << nbIter << "," << nbCells << "," << nbAliveStroma << ","
-           << nbApopStroma << "," << nbNecroStroma << "," << nbAliveImmune
-           << "," << nbAliveImmuneResident << "," << nbAliveImmuneCirculatory
-           << "," << nbApopImmune << "," << nbNecroImmune << ","
-           << nbImmuneMaker << "," << avgInfla << std::endl;
-    myfile.close();
-  }
+  //   std::ofstream myfile;
+    
+  //   myfile << nbIter << "," << nbCells << "," << nbAliveStroma << ","
+  //          << nbApopStroma << "," << nbNecroStroma << "," << nbAliveImmune
+  //          << "," << nbAliveImmuneResident << "," << nbAliveImmuneCirculatory
+  //          << "," << nbApopImmune << "," << nbNecroImmune << ","
+  //          << nbImmuneMaker << "," << avgInfla << std::endl;
+    
+  // }
 };
 
 double GingiScenario::BOX_HALF_SIZE = 250.0;

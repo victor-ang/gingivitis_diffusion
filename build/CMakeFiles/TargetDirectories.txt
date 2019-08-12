@@ -1,5 +1,0 @@
-/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build/CMakeFiles/rebuild_cache.dir
-/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build/CMakeFiles/console.dir
-/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build/CMakeFiles/edit_cache.dir
-/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build/CMakeFiles/viewer.dir
-/mnt/hgfs/victor/Documents/Post-Bac/M1 MAPI3/Stage/Stromalab/Code/Gingivitis_Diffusion/build/CMakeFiles/viewer_autogen.dir

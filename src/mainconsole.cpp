@@ -3,38 +3,38 @@
 //#define DETERMINIST
 #include <mecacell/mecacell.h>
 #include "core/GingiScenario.hpp"
+#include <omp.h>
+
+
 
 int main(int argc, char *argv[]) {
-
-    int AS = 8;
-    int AI = 8;
-    int DS = 4;
-    int DI = 4;
+    //omp_set_num_threads(4);
+    long valMS = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch()).count();
+    std::stringstream dirname;
+    dirname << "../Simulations/" << valMS;
+    mkdir(dirname.str().c_str(), 0777);
     using scenario_t = GingiScenario;
-    for (double apopStroma = 0.00000001; apopStroma<=0.001; apopStroma*=10) {
-        for (double apopImmune = 0.00000001; apopImmune<=0.001; apopImmune*=10) {
-            for (double divStroma = 0.0001; divStroma<=0.1; divStroma*=10) {
-                for (double divImmune = 0.0001; divImmune<=0.1; divImmune*=10) {
+    for (int AS = 8; AS>=8; AS--) {
+        for (int AI = 8; AI>=8; AI--) {
+            for (int DS = 5; DS>=5; DS--) {
+                #pragma omp parallel for
+                for (int DI = 5; DI>=2; DI--) {
+                    stringstream path;
+                    //std::ofstream myfile;
+                    std::cout << "DI=" << DI << std::endl;
+                    path << dirname.str() << "/data" << AS <<"_"<< AI <<"_"<< DS <<"_"<< DI << ".csv"; // nouveau nom
+                    //myfile.open(path, std::ofstream::app);
                     scenario_t scenar;
-		
-                    scenar.init(apopStroma,apopImmune,divStroma,divImmune,AS,AI,DS,DI);
-                    
-                    DI--;
-
+                    scenar.init(pow(10.,AS*-1.),pow(10.,AI*-1.),pow(10.,DS*-1.),pow(10.,DI*-1.),path.str());
                     int i = 0;
                     while (!scenar.stop()) {
                         scenar.loop();
                         i++;
                     }
+                    scenar.myfile.close();
                 }
-                DS--;
-                DI = 4;
             }
-            AI--;
-            DS = 4;
         }
-        AS--;
-        AI = 8;
     }
 
         
