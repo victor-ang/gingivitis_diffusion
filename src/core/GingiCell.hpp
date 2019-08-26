@@ -85,6 +85,7 @@ public:
     this->type = mother->type;
     this->immuneType = mother->immuneType;
     this->age = mother->age;
+    this->extinctionProb = mother->extinctionProb;
     this->eatenCounterApoptosis = mother->eatenCounterApoptosis;
     this->eatenCounterNecrosis = mother->eatenCounterNecrosis;
     this->shiftStep = mother->shiftStep;
@@ -180,7 +181,7 @@ public:
 
     // Immune maker behavior
     if (this->type == ImmuneMaker) {
-      immuneMakerBehavior(w);
+      //immuneMakerBehavior(w);
     } else if (this->state == Apoptosis) {
       disappearance(); // Death
       eatme();
@@ -233,16 +234,16 @@ public:
         this->setColor(health, 0.0, health);
         break;
       case 3: // immune cell eats a cell in apoptosis
-        this->setColor(1.0, 0.5, 0.5);
+        //this->setColor(1.0, 0.5, 0.5);
         break;
       case 4: // stroma cell eats a cell in apoptosis
-        this->setColor(0.5, 0.5, 1.0);
+        //this->setColor(0.5, 0.5, 1.0);
         break;
       case 5: // immune cell eats a cell in necrosis
-        this->setColor(this->getBody().getQuantities()[SIGNAL::INFLAMMATORY], 0.0, this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]);
+        this->setColor(1.0 ,0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]*0.5,0.5);
         break;
       case 6: // stroma cell eats a cell in necrosis
-        this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.0);
+        this->setColor(0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 0.5 + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5, 1.0);
         break;
       case 7: // inflamed cell
         this->setColor(0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.5f + this->getBody().getQuantities()[SIGNAL::INFLAMMATORY] * 0.5f, 0.0);
@@ -254,7 +255,7 @@ public:
   }
 
   template <class W> void immuneMakerBehavior(W &w) {
-    if (dice(MecaCell::Config::globalRand()) < this->divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]) {
+    if (dice(MecaCell::Config::globalRand()) < (this->divisionProb * this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])) {
       // The more inflammation there is, the more likely it is that the cell will divide
       immuneCirculatoryCreation(w);
     }
@@ -370,11 +371,18 @@ public:
   }
 
   void signalsRelay() {
-    double attenuationFactor = 0.1;
-    // Rajouter une condition pour savoir si la cellule n'a pas mangé et donc pas commencé le shift??
-    // Sigmoid
-    this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - attenuationFactor * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
-    this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - attenuationFactor * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
+    double attenuationFactorImmune = 0.1;
+    double attenuationFactorStroma = 0.05;
+    if (this->eatenCounterNecrosis <=0.0){
+      // Sigmoid
+      if (this->type == Immune) {
+        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - attenuationFactorImmune * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
+        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - attenuationFactorImmune * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
+      } else if (this->type == Stroma) {
+        this->getBody().setConsumption(SIGNAL::INFLAMMATORY, - attenuationFactorStroma * (1-1/(1+0.1*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY])))));
+        this->getBody().setConsumption(SIGNAL::RESOLUTIVE, - attenuationFactorStroma * 1/(1+10*exp(-10*(this->getBody().getQuantities()[SIGNAL::RESOLUTIVE] - this->getBody().getQuantities()[SIGNAL::INFLAMMATORY]))));
+      }
+    }
   }
 
   bool eat() {
@@ -428,8 +436,9 @@ public:
         hasShifted = true;
       } else if (this->eatenCounterNecrosis > 0.0f && this->getBody().getQuantities()[SIGNAL::EATME] > 0.001f) {
         if (this->shiftStep > (*config)[typeToString(this->type)][immuneTypeToString(this->immuneType)]["shiftStep"]) {
+          this->getBody().setConsumption(SIGNAL::INFLAMMATORY, -(1 - 1 / (1 + 0.1 * exp(-shiftStep + 5))) * inflaProd); // Production decreases
+          this->getBody().setConsumption(SIGNAL::RESOLUTIVE, -(1 / (1 + 10 * exp(-shiftStep + 5))) * resoProd); // Production increases
           this->shiftStep --;
-          // PRODUCTION A RAJOUTER !
         }
       }
     }

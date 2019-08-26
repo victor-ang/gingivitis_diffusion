@@ -25,8 +25,8 @@ public:
   void init() {
 
     config = loadJsonConfig("../j.json");
-    Molecule infla(400.0, 0.0, 1.0, 0.1);
-    Molecule reso(400.0, 0.0, 1.0, 0.1);
+    Molecule infla(600.0, 0.0, 1.0, 0.1);
+    Molecule reso(600.0, 0.0, 1.0, 0.1);
     Molecule eatme(600.0, 0.0, 1.0, 0.1);
 
     w.cellPlugin.diffusionPlugin.addMolecule(infla);
@@ -56,12 +56,16 @@ public:
     int k = 0;
     Cell *c;
     while (k < nCells * ratio) {
+      
+      
       k++;
       MecaCell::Vec pos(nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()),
                         nDist(MecaCell::Config::globalRand()));
       c = new Cell(pos, w.cellPlugin.diffusionPlugin.getGrid());
       c->init(Cell::Immune, Cell::Resident, &config);
+
+      
       w.addCell(c);
     }
     while (k < nCells) {
@@ -160,6 +164,8 @@ public:
                    nbApopStroma, nbNecroStroma, nbAliveImmune,
                    nbAliveImmuneResident, nbAliveImmuneCirculatory,
                    nbApopImmune, nbNecroImmune, nbImmuneMaker, avgInfla);
+
+        
 
         // myfile.close(); // Fermeture du csv contenant toutes les cellules
       }
